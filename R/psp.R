@@ -140,7 +140,8 @@ setMethod("initialize", "PSP",
 		verb = 0, # Level of verbosity
 		criterion = "min",
 		strata = as.factor(rep(1, times=nrow(x))), # Which criterion to use to select optimal parameters; 1 = maximal mean CV score (c-index or iAUC), 2 = ...
-		dictionary # A named list object where within each unique feature name can be two objects: 'description' and 'synonyms'
+		dictionary, # A named list object where within each unique feature name can be two objects: 'description' and 'synonyms'
+		x.expand
 		# , ... # removing ... during bugfixing to see if any parameters leak through
 	){
 		if(verb>-1) cat("--- Initializing new PSP object ---\n\n")
@@ -152,6 +153,8 @@ setMethod("initialize", "PSP",
 		.Object@cvrepeat = cvrepeat
 		.Object@seed = seeds
 		.Object@strata = strata
+		# Custom interaction / data matrix x expansion function
+		if(!missing(x.expand)) .Object@x.expand = x.expand
 		if(!sum(is.na(x))==0){
 			if(verb>-1) cat("--- Missing entries detected in x, running defined imputation function ---\n\n")
 			x <- .Object@impute(x)

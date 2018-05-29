@@ -556,3 +556,40 @@ cv.grid <- function(
 	tmp
 }
 
+# Trim 'fat' of glmnet/coxnet objects to conserve space; some functionality may not be any more usable as-is after this
+.trim.coxnet <- function(
+	# A glmnet-object, preferably coxnet
+	object
+	){
+
+	# Return trimmed object
+	object
+}
+
+# Trim 'fat' of PEP/PSP objects to conserve space; some functionality may not be any more usable as-is after this
+.trim.ePCR <- function(
+	# PSP or PEP
+	object,
+	# Should cross-validation mean be trimmed; heatmaps cannot be plotted if so
+	rm.cvmean = F
+	){
+	
+	# Function for specificly trimming psp
+	trim <- function(psp){
+	
+	}
+	
+	if(class(object)=="PSP"){
+		object <- trim(object)
+	}else if(class(object)=="PEP"){
+	
+	}else{
+		stop(paste("object input should be either a PSP or a PEP object, current object class:", class(object)))
+	}
+
+	# Return trimmed object
+	object
+}
+
+
+

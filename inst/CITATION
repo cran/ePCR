@@ -1,8 +1,0 @@
-bibentry(bibtype = "Unpublished",
-	title = "ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort.",
-	author = c(person("Teemu Daniel", "Laajala"),
-		person("Mika", "Murtojärvi"),
-		person("Arho", "Virkki"),
-		person("Tero", "Aittokallio")),
-	note = "Manuscript in preparation."
-)

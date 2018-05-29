@@ -13,7 +13,7 @@
 
 #' Compute mean of predicted risk ranks for an ePCR ensemble
 #'
-#' @param x A list or a matrix of risk scores given per each ensemble member (each column or list member is considered an equal member of the ensemble
+#' @param x A list or a matrix of risk scores given per each ensemble member (each column or list member is considered an equal member of the ensemble)
 #'
 #' @return An averaged predicted risk rank over all the ensemble members
 #' 

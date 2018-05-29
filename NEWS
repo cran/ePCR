@@ -1,0 +1,17 @@
+ePCR v0.9.9-6 (Release date: 2018-05-28)
+==============
+
+Changes:
+
+* Trimming functions and modified .RData for both ePCR S4-objects as well as glmnet model fits to reduce tarball size and installed package size
+* Using R.rsp to create vignettes from pre-computed .tex
+
+
+ePCR v0.9.9-5 (Release date: 2018-05-23)
+==============
+
+Changes:
+
+* Minor improvements to the code, such as how the x.expand slot is called inside PSPs
+* New extensive step-by-step vignette
+* Attempted to reduce the size of the /data/ folder, since on some platforms the installed package exceeds 5 MB just barely

@@ -7,7 +7,7 @@
 meanrank(x)
 }
 \arguments{
-\item{x}{A list or a matrix of risk scores given per each ensemble member (each column or list member is considered an equal member of the ensemble}
+\item{x}{A list or a matrix of risk scores given per each ensemble member (each column or list member is considered an equal member of the ensemble)}
 }
 \value{
 An averaged predicted risk rank over all the ensemble members

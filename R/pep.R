@@ -140,7 +140,7 @@ setMethod("show", "PEP",
 		cat("\n")
 	}
 )
-#' Print a PEP object
+#' print.PEP: Print a PEP object to the console
 #' @rdname PEP-methods
 #' @param x Generic x
 #' @param ... Additional custom parameters passed on
@@ -170,28 +170,41 @@ setMethod("print", "PEP",
 #' @param object PEP-ensemble model object
 #' @param type Type of prediction; either "response" or "ensemble"
 #' @param newx New data matrix
+#' @param x.expand A function that may expand (i.e. extract features) from the input data matrix. By default this will be the default x.expand saved in the S4-slot of the first ensemble member. If the user wishes to omit this functionality, setting this parameter to 'x.expand = as.matrix' does not expand the input data matrix. Notice that if the user has manually called the 'conforminput' function for the newx-data, it is no longer necessary to expand the data matrix here.
 #' @export
 setMethod("predict", "PEP",
-	function(object, type="response", newx){
+	function(object, type="response", newx, x.expand){
+		# If user doesn't supply a custom x.expand just an identity function (as.matrix) or something else, we'll use the default S4-slot x.expand in the first PSP in the ensemble
+		if(missing(x.expand)) x.expand <- object@PSPs[[1]]@x.expand
+		# Double-check to see user hasn't invoked a customized x.expand already on the data; otherwise dimensions will not match
 		if(!missing(newx)){
 			preds <- lapply(object@PSPs, FUN=function(z){
-				glmnet::predict.coxnet(z@fit, newx=as.matrix(z@x.expand(newx)), s=z@optimum["Lambda"])
+				# Novel data prediction
+				glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
 			})		
 		}else{
 			preds <- lapply(object@PSPs, FUN=function(z){
-				glmnet::predict.coxnet(z@fit, newx=as.matrix(z@x.expand(z@x)), s=z@optimum["Lambda"])
+				# Demonstrate using the data matrix in stored in ePCR object
+				glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
 			})		
 		}
+		# Transforming ensemble prediction lists to matrices
+		if(class(preds)=="list") preds <- matrix(unlist(preds), ncol=length(preds))
+		# Ensemble prediction, final risk scores over all PSPs
 		if(type=="ensemble"){
 			if(missing(newx)) stop("For a novel ensemble prediction a 'newx' should be provided")
-			preds <- object@prednorm(object@predens(preds))
+			# Deprecated
+			#preds <- object@prednorm(object@predens(preds))
+			preds <- object@predens(preds)
 			names(preds) <- rownames(newx)
 			preds
-		}else{
+		# Responses per PSPs, i.e. ensemble specific columns retained
+		}else{ 
+			colnames(preds) <- paste("PSP_", 1:length(object@PSPs), sep="")
+			rownames(preds) <- rownames(newx)
 			preds
 		}
 	}
-	# Ensemble prediction
 )
 
 ###

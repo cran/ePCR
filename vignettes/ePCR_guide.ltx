@@ -1,0 +1,506 @@
+\documentclass[a4paper]{article}
+
+%\VignetteIndexEntry{User guide to the ePCR R-package}
+%\VignetteEngine{R.rsp::tex}
+
+\usepackage{graphicx}
+\usepackage{amssymb,amsthm,amsmath} %ams
+\usepackage[T1]{fontenc} % skanditavutus
+\usepackage[utf8]{inputenc} % skandit utf-8 koodauksella
+\usepackage{longtable}
+\usepackage{caption}
+
+\title{User guide to the ePCR R-package}
+\author{Teemu Daniel Laajala \\ teelaa@utu.fi }
+
+\usepackage{Sweave}
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\pagebreak
+
+\section{Description of the \texttt{ePCR} package}
+
+\noindent \texttt{ePCR} is an R-package intended for the survival analysis of advanced prostate cancer. This document is a basic introduction to the functionality of \texttt{ePCR} and a general overview to the possible analysis workflows for clinical trial or hospital registry cohorts. The approach leverages ensemble-driven usage of single Cox regression based regression models named \textit{ePCR}, which was the top performing approach in the DREAM 9.5 Prostate Cancer Challenge \cite{ref:guinney}.
+
+The latest version of \texttt{ePCR} is available in the Comprehensive R Archive Network (CRAN, http://cran.r-project.org/). CRAN mirrors are by default available in the installation of R, and the \texttt{ePCR} package is installable using the R terminal command: \texttt{install.packages("ePCR")}. This should prompt the user to select a nearby CRAN mirror, after which the installation of \texttt{ePCR} and its dependencies are automatically performed. After the \texttt{install.packages}-call, the \texttt{ePCR} package can be loaded with either command \texttt{library("ePCR")} or \texttt{require("ePCR")}.
+
+The following notation is used in the document: R commands, package names and function names are written in \texttt{typewriter font}. The notation of format \texttt{pckgName::funcName} indicates that the function \texttt{funcName} is called from the package \texttt{pckgName}, which is prominently used in the underlying R code due to package namespaces. This document as well as other useful PDFs can be inspected using the \texttt{browseVignettes} function for any package in R.
+
+\section{Loading the example clinical cohorts into the R session}
+
+The \texttt{ePCR}-package is provided with two example hospital registry datasets. These datasets represent confidential hospital registry cohorts, to which kernel density estimation was fitted. Illustrative virtual patients were then generated from the kernel estimates and are provided here in the example datasets. Please see the accompanying \texttt{ePCR} publication for further details on the two Turku University Hospital cohorts \cite{ref:ePCR}, and the Synapse site for DREAM 9.5 PCC for accessing the original DREAM data. The exemplifying datasets can be loaded into an R session using:
+
+\begin{Schunk}
+\begin{Sinput}
+> require(ePCR)
+> require(survival)
+> # Kernel density simulated patients from Turku University Hospital (TYKS)
+> # Data consists of TEXT cohort (text-search found patients) 
+> # and MEDI (patients identified using medication and few keywords)
+> data(TYKSSIMU)
+> # The following data matrices x and survival responses y become available
+> # head(xTEXTSIMU); head(yTEXTSIMU) 
+> # head(xMEDISIMU); head(yMEDISIMU)
+\end{Sinput}
+\end{Schunk}
+
+\section{Fitting new ePCR S4-objects}
+
+\noindent It is important to disginguish between the \texttt{PSP} and \texttt{PEP} objects, which represent a single penalized Cox regression model and an ensemble of Cox regression models, respectively. \texttt{PSP} objects are penalized/regularized Cox regression models fitted to a particular dataset by exploring its $\{\lambda, \alpha\}$ parameter space. Notice that the sequence of $\lambda$ is dependent on the $\alpha \in [0,1]$. The regularized/penalized fitting procedure in \texttt{ePCR} is provided by the \texttt{glmnet}-package \cite{ref:coxnet}, although custom cross-validation and other supporting functionality is provided independently.
+
+After fitting suitable candidate \texttt{PSP}-objects (Penalized Single Predictors), these will be aggregated to the ensemble structure \texttt{PEP} (Penalized Ensemble Predictor). The key input to \texttt{PEP}-constructor are the \texttt{PSP} intended for the use of the ensemble. We will start off by introducing the fine-tuning and fitting of \textit{PSP}s. For this purpose the generic S4-class contructor \textit{new} will be called with the main parameter indicating that we wish to construct a \textit{PSP}-object.
+
+\subsection{PSP-objects}
+
+The key attributes provided for the PSP-constructor are the following parameters (see \texttt{?'PSP-class'} in R for further documentation):
+
+\begin{itemize}
+	\item \texttt{x}: The input data matrix where rows corresponding to patients and columns to potential predictors.
+	\item \texttt{y}: The '\texttt{surv}'-class response vector as required by Cox regression and \texttt{glmnet} in survival prediction.
+	\item \texttt{seeds}: An integer vector or a single value for setting the random seed for cross-validation. Notice that this is highly suggested for reproducibility. If a multiple seed integers are provided, the cross-validation will be conducted separately for each. This will smoothen the cross-validation surface, but will take multiply the computational time required to fit a model.
+	\item \texttt{score}: The scoring function utilized in evaluating the generalization ability of the fitted model in cross-validation; readily implemented scoring functions include \texttt{score.iAUC} and \texttt{score.cindex}, but custom scoring functions are also allowed. Appendix 3 elaborates on the evaluation metrics.
+	\item \texttt{alphaseq}: Sequence of alpha values. The extreme ends $\alpha = 1$ is LASSO regression and $\alpha = 0$ is Ridge Regression. $\alpha \in ]0,1[$ is generally referred to as Elastic Net. Notice that LASSO and Ridge Regression have noticeably different characteristics as they utilizeo only the $L_1$ and $L_2$ norms, respectively; for example, a Ridge Regression model will never have its coefficients exactly zero. Furthermore, for co-linear predictors LASSO tends to pick a single one, while Ridge Regression picks multiple ones and spreads the overall effect over these predictors. Depending on the ultimate prediction purpose, one may prefer one or the other and can tailor \texttt{alphaseq} to suit their needs. By default we suggest utilizing an evenly spaced \texttt{alphaseq} over $[0,1]$ at least for preliminary search. 
+	\item \texttt{nlambda}: Number of $\lambda$ tested as a function of the corresponding $\alpha$. By default \textit{glmnet} suggested 100 values which are picked from a feasible range between model including all coefficients and converged model where no further penalization is possible.
+	\item \texttt{folds}: Number of folds in the cross-validation (minimum 3, maximum n obs = LOO-CV).
+\end{itemize}
+
+For the sake of the example, we will construct an \texttt{ePCR} model ensemble that consists of two \texttt{PSP}-objects; one from the medication curated cohort and other from the text search cohort. We will leave out a small portion of medication and text search patients for a small test set, to later evaluate the generalization ability of the ensemble. Notice however that this is not a proper evaluation as the patients are not from an independent source, and therefore give an optimistic view to the generalization capability of the model(s).
+
+\begin{Schunk}
+\begin{Sinput}
+> testset <- 1:30
+> # Medication cohort fit
+> # Leaving out patients into a separate test set using negative indices
+> psp_medi <- new("PSP", 
++ 	# Input data matrix x (example data loaded previously)
++ 	x = xMEDISIMU[-testset,],
++ 	# Response vector, 'surv'-object
++ 	y = yMEDISIMU[-testset,"surv"],
++ 	# Seeds for reproducibility
++ 	seeds = c(1,2),
++ 	# If user wishes to run the CV binning multiple times,
++ 	# this is possible by averaging over them for smoother CV heatmap.
++ 	cvrepeat = 2,
++ 	# Using the concordance-index as prediction accuracy in CV
++ 	score = score.cindex,
++ 	# Alpha sequence
++ 	alphaseq = seq(from=0, to=1, length.out=51),
++ 	# Using glmnet's default nlambda of 100
++ 	nlambda = 100,
++ 	# Running the nominal 10-fold cross-validation
++ 	folds = 10,
++ 	# x.expand slot is a function that would allow interaction terms
++ 	# For the sake of the simplicity we will consider identity function
++ 	x.expand = function(x) { as.matrix(x) }
++ )
+\end{Sinput}
+\end{Schunk}
+
+The parameters for the second \texttt{PSP} are similar to the one above. Notice that with the PSP-members, user can tailor multiple parameters to best suit the data.
+
+\begin{Schunk}
+\begin{Sinput}
+> # Text run similar to above
+> # Leaving out patients into a separate test set using negative indices
+> psp_text <- new("PSP", 
++ 	x = xTEXTSIMU[-testset,],
++ 	y = yTEXTSIMU[-testset,"surv"],
++ 	seeds = c(3,4),
++ 	cvrepeat = 2,
++ 	score = score.cindex,
++ 	alphaseq = seq(from=0, to=1, length.out=51),
++ 	nlambda = 100,
++ 	folds = 10,
++ 	x.expand = function(x) { as.matrix(x) }
++ )
+\end{Sinput}
+\end{Schunk}
+
+\begin{Schunk}
+\begin{Sinput}
+> # Taking a look on the show-method for PSP:
+> psp_medi
+\end{Sinput}
+\begin{Soutput}
+PSP ePCR object
+N observations:  120 
+Optimal alpha:  0.1 
+Optimal lambda:  0.7693556 
+Optimal lambda index:  14 
+\end{Soutput}
+\begin{Sinput}
+> class(psp_medi)
+\end{Sinput}
+\begin{Soutput}
+[1] "PSP"
+attr(,"package")
+[1] "ePCR"
+\end{Soutput}
+\end{Schunk}
+
+Various diagnostic and utility functions are provided for \texttt{PSP} objects. Here are some convenient example calls in R for the object fitted above, where the heatmaps for the optimized PSP surfaces are highly useful:
+
+\begin{figure}
+\begin{center}
+\begin{Schunk}
+\begin{Sinput}
+> # Plot the CV-surface of the fitted PSP:
+> plot(psp_medi, 
++ 	# Showing only every 10th row and column name (propagated to heatcv-function)
++ 	by.rownames=10, by.colnames=10, 
++ 	# Adjust main title and tilt the bias of the color key legend (see ?heatcv)
++ 	main="C-index CV for psp_medi", bias=0.2)
+\end{Sinput}
+\end{Schunk}
+\includegraphics{ePCR_guide-005}
+\caption{Cross-validation surface of the $\{\alpha,\lambda\}$ grid for the medication cohort, with concordance index as the performance metric.}
+\end{center}
+\end{figure}
+
+Noticeably, the cross-validation surface suggests different optimized penalization parameters for the two ensemble members. This most likely stems from systematic differences in the two cohorts, to which end the \texttt{ePCR} methodology offers an ensemble-driven alternative to account for differences between patient substrata.
+
+\begin{figure}
+\begin{center}
+\begin{Schunk}
+\begin{Sinput}
+> plot(psp_text, 
++ 	# Showing only every 10th row and column name (propagated to heatcv-function)
++ 	by.rownames=10, by.colnames=10, 
++ 	# Adjust main title and tilt the bias of the color key legend (see ?heatcv)
++ 	main="C-index CV for psp_text", bias=0.2)	
+\end{Sinput}
+\end{Schunk}
+\includegraphics{ePCR_guide-006}
+\caption{Cross-validation surface of the $\{\alpha,\lambda\}$ grid for the text search cohort.}
+\end{center}
+\end{figure}
+
+In addition to providing the CV-grid, the identified optimal parameters are available for downstream analyses:
+
+\begin{Schunk}
+\begin{Sinput}
+> # Identified optimal PEP parameters according to CV
+> psp_medi@optimum
+\end{Sinput}
+\begin{Soutput}
+      Alpha  AlphaIndex      Lambda LambdaIndex 
+  0.1000000   6.0000000   0.7693556  14.0000000 
+\end{Soutput}
+\begin{Sinput}
+> psp_text@optimum
+\end{Sinput}
+\begin{Soutput}
+      Alpha  AlphaIndex      Lambda LambdaIndex 
+ 0.12000000  7.00000000  0.05569486 46.00000000 
+\end{Soutput}
+\begin{Sinput}
+> # Various other object slots are available in the S4-slots indicated by @:
+> slotNames(psp_medi)
+\end{Sinput}
+\begin{Soutput}
+ [1] "description" "features"    "strata"      "alphaseq"    "cvfolds"    
+ [6] "nlambda"     "cvmean"      "cvmedian"    "cvstdev"     "cvmin"      
+[11] "cvmax"       "score"       "cvrepeat"    "impute"      "optimum"    
+[16] "seed"        "x"           "x.expand"    "y"           "fit"        
+[21] "criterion"   "dictionary"  "regAUC"     
+\end{Soutput}
+\end{Schunk}
+
+\subsection{PEP-objects}
+
+Once the \texttt{PSP}-objects have been constructed, they are aggregated to the corresponding Penalized Ensemble Predictor (PEP). The \texttt{PEP} objects aggregate \texttt{PSP} objects from various data slices or optimization criteria, and create an ensemble predictor that averages over the provided single predictors. As such, its most important input is the list of desired \texttt{PSP}-objects:
+
+\begin{Schunk}
+\begin{Sinput}
+> pep_tyks <- new("PEP",
++ 	# The main input is the list of PSP objects
++ 	PSPs = list(psp_medi, psp_text)
++ )
+> # These PSPs were constructed using the example code above.
+> pep_tyks
+\end{Sinput}
+\begin{Soutput}
+Penalized Ensemble Predictor
+Count of PSPs:  2
+\end{Soutput}
+\begin{Sinput}
+> class(pep_tyks)
+\end{Sinput}
+\begin{Soutput}
+[1] "PEP"
+attr(,"package")
+[1] "ePCR"
+\end{Soutput}
+\begin{Sinput}
+> slotNames(pep_tyks)
+\end{Sinput}
+\begin{Soutput}
+[1] "PSPs"        "description" "features"    "dictionary"  "predens"    
+[6] "prednorm"   
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Predictions based on PEP/PSP-objects}
+
+\begin{Schunk}
+\begin{Sinput}
+> # Conduct naive test set evaluation
+> xtest <- rbind(xMEDISIMU[testset,], xTEXTSIMU[testset,])
+> ytest <- rbind(yMEDISIMU[testset,], yTEXTSIMU[testset,])
+> # Perform survival prediction based on the PEP-ensemble we've created
+> xpred <- predict(pep_tyks, newx=as.matrix(xtest), type="ensemble")
+> # Construct a survival object using the Surv-package
+> ytrue <- Surv(time = ytest[,"surv"][,"time"], event = ytest[,"surv"][,"status"])
+> # Test c-index between our constructed ensemble prediction and true response
+> tyksscore <- score.cindex(pred = xpred, real = ytrue)
+> print(paste("TYKS example c-index:", round(tyksscore, 4)))
+\end{Sinput}
+\begin{Soutput}
+[1] "TYKS example c-index: 0.7463"
+\end{Soutput}
+\end{Schunk}
+
+\section{Using the provided DREAM and TYKS ePCR-models}
+
+The \texttt{ePCR} R-package comes with readily fitted \textit{ePCR}-ensembles from the work by Guinney, Wang, Laajala et al \cite{ref:guinney} as well as from hospital registry cohorts. Due to data confidentiality issues, the original data matrices or responses are not provided in the S4-objects (although normally they would be in the slots \texttt{@x} and \texttt{@y}, respectively). 
+
+In order to gain access to the original data by Guinney et al., the processed data can be accessed as raw \texttt{.csv} files or R workspaces at: \newline https://www.synapse.org/\#!Synapse:syn4227610/files/
+
+Accessing the Turku University Hospital registry cohort requires a research permit and users are encouraged to contact the Center for Clinical Informatics (Arho.Virkki@tyks.fi) for further information.
+
+Despite not providing the original data matrices, the ensemble model fits and their coefficients as a function of $\{\lambda, \alpha\}$ are fully functional. They are therefore suitable for conducting predictions for future patients or for studying effect within the estimated models/ensembles. These model objects can be loaded in \texttt{ePCR} using:
+
+\begin{Schunk}
+\begin{Sinput}
+> data(ePCRmodels)
+> class(DREAM)
+\end{Sinput}
+\begin{Soutput}
+[1] "PEP"
+attr(,"package")
+[1] ".GlobalEnv"
+\end{Soutput}
+\begin{Sinput}
+> class(TYKS)
+\end{Sinput}
+\begin{Soutput}
+[1] "PEP"
+attr(,"package")
+[1] "ePCR"
+\end{Soutput}
+\end{Schunk}
+
+The \texttt{DREAM} S4-object is the top-performing mCRPC OS-predicting ensemble from Guinney et al. \cite{ref:guinney}, while the TYKS models are fitted to the original Turku University Hospital cohorts. These model objects can be used for prediction similarly to the novel S4 PEP-object created in above sections. As an example, if we utilize the DREAM model trained on controlled clinical trials on the TYKS hospital registry patients, the OS prediction can be conducted using:
+
+\begin{Schunk}
+\begin{Sinput}
+> # Create a DREAM-matching data input matrix from our xtest and the full data matrix
+> xtemp <- conforminput(DREAM, xtest)
+> # Predict survival for our hospital registry example dataset 
+> dreampred <- predict(DREAM, 
++ 	# Providing full new data and average prediction over the ensemble members
++ 	newx=xtemp, type="ensemble",
++ 	# Defining that we don't want any further data matrix feature extraction
++ 	# The call to conforminput above already formatted the input data
++ 	x.expand = as.matrix
++ )
+\end{Sinput}
+\end{Schunk}
+
+Notice that we utilize the helper function \texttt{conforminput} for feature extraction/creation, as multiple interaction variables were introduced in the original DREAM data matrix and the dimensions would not match in the regression task otherwise.
+
+The following error message is quite commonly encountered when first using pre-built models to new data:
+\begin{verbatim}
+Error in newx %*% nbeta : 
+  Cholmod error 'X and/or Y have wrong dimensions' 
+  at file ../MatrixOps/cholmod_sdmult.c, line 90
+\end{verbatim}
+It is prompted by the \texttt{glmnet}-package's C/Fortran implementation, if the $\beta$ coefficients do not conform to the provided dimensions of the new data matrix $X$. For this purpose, the new data should have equal number of columns (variables) using data processing (functions such as \texttt{conforminput} or the S4-slot in a \texttt{PEP}-object called \texttt{x.expand}).
+
+The concordance index for the DREAM prediction for the hospital registry patients in this example is:
+
+\begin{Schunk}
+\begin{Sinput}
+> # Test c-index between the DREAM ensemble prediction and TYKS true response
+> dreamscore <- score.cindex(pred = dreampred, real = ytrue)
+> print(paste("DREAM example c-index:", round(dreamscore, 4)))
+\end{Sinput}
+\begin{Soutput}
+[1] "DREAM example c-index: 0.611"
+\end{Soutput}
+\end{Schunk}
+
+
+\newpage
+\section{Appendices}
+
+
+\subsection{Appendix 1 - \textit{ePCR} functionality}
+% Utilizing longtable(s) for multipage extension
+
+\fontsize{8}{9}\selectfont % Smaller font
+\setlength\LTleft{-1in}  \setlength\LTright{-1in} % Extending margins for the long tables
+\begin{longtable}{p{5cm} p{5cm} p{5cm}}
+
+	\captionsetup{width=17cm}
+	\caption{ This table bundles together various functions in a brief manner, and the modeling task in which they may be useful. The open-source code enables the user to use readily fitted model ensembles or construct their own. The functions presented below are a short summary of functions that the user may want to call on their own and does not include the package's internal functions. Self-sufficient examples for using the functions are provided the R-package manual, in the \textit{Examples}-section of each function.}
+
+\\
+
+Functions & Names & Usage \\
+\hline\hline
+S4-class ePCR construction & & \\
+\hline
+\texttt{PEP} and \texttt{PSP} & Class initializers & \texttt{new("PSP", ...)}, \texttt{new("PEP", ...)} \\
+\hline
+S4 R default overrides & & \\
+\hline
+\texttt{predict.PEP}, \newline \texttt{print.PEP}, \newline \texttt{show.PSP}	& Override default functions for PEP-objects	& Called when the default names are used on \texttt{PEP} S4-objects \\
+\texttt{predict.PSP}, \newline \texttt{coef.PSP}, \newline\texttt{plot.PSP}, \newline \texttt{print.PSP}, \newline \texttt{show.PSP}, \newline \texttt{print.PSP}	& Override default functions for PSP-objects	& Called when the default names are used on \texttt{PEP} S4-objects \\
+\hline\hline
+Data/ensemble examples & & \\
+\hline
+\texttt{TYKS} & Hospital registry cohort \texttt{x} and \texttt{y} from Turku University Hospital & \texttt{data(TYKS)} \\
+\texttt{ePCRmodels} & Readily fitted \texttt{ePCR} S4-ensembles (DREAM and TYKS) & \texttt{data(ePCRmodels)} \\
+\hline\hline
+Data processing & & \\
+\hline
+conforminput & Try conform dimensions of input $X$ and model $\beta$ & \texttt{conforminput(psp, xinput)} \\
+zt & z-score transformation, with NA-imputation & \texttt{apply(x, MARGIN=2, FUN=zt)} \\
+interact.all, interact.part & Functions for feature extraction from existing data x & \texttt{interact.all(x)} \\
+\hline\hline
+PSP-functions & & \\
+\hline
+PSP.BOX, \newline PSP.CSP, \newline PSP.KM, \newline PSP.NA, \newline PSP.PCA & Diagnostics, plotting and prediction functions for PSP-objects & \texttt{PSP.funcname(psp, ...)} \\
+\hline\hline
+Model fitting and evaluation & & \\
+\hline
+cv, \newline cv.alpha, \newline cv.grid & Cross-validation (CV) functionality embedded into the constructors &  Embedded to PSP construction \\
+score.cindex, \newline score.iAUC  & Scoring functions for CV & Embedded to PSP construction and exemplified in this guide\\
+\hline\hline
+Model diagnostics & & \\
+\hline
+bootstrapRegCoefs & Significance of regularized model coefficients through bootstrapping & \texttt{bootstrapRegCoefs(psp, ...)} \\
+integrateRegCurve & Integrate Area Under/Over the regularized model coefficint curves as a function of $\lambda$ & \texttt{integrateRegCurve(psp, ...)} \\
+\hline\hline
+Survival time-to-event prediction & & \\
+\hline
+NelsonAalen & Heuristic Cox-Oakes extension for Nelson-Aalen for individual survival & See package documentation \\
+TimeSurvProb & Obtain individualized time-to-event predictions where cumulative survival probability reaches 0.5 & See package documentation \\
+\hline\hline
+
+\label{tab:funcusage}
+\end{longtable}
+\normalsize
+
+
+
+\newpage
+\subsection{Appendix 2 - Comparison of the present \textit{ePCR}-package and original DREAM code}
+
+
+% Utilizing longtable(s) for multipage extension
+
+\fontsize{8}{9}\selectfont % Smaller font
+\setlength\LTleft{-1in}  \setlength\LTright{-1in} % Extending margins for the long tables
+\begin{longtable}{p{4cm} p{4cm} p{4cm} p{4cm}}
+
+	\captionsetup{width=17cm}
+	\caption{Description and novelty of functions, S4-classes, datasets and ePCR-models provided in the \textit{ePCR}-package in comparison with R code published in Synapse after the DREAM 9.5 mCRPC Challenge \cite{ref:guinney}.}
+
+\\
+
+Classes/Functions & Summary & Purpose & Novelty comparison \\
+\hline\hline
+S4-classes & & & \\
+\hline
+PEP & Penalized Ensemble Predictor  & S4-class ensembles consisting of PSP-members & Novel \\
+PSP & Penalized Single Predictor    & S4-class for constructing single predictors & Novel \\
+\hline\hline
+S4 R default overrides & & & \\
+\hline
+predict.PEP	& predict-override	& Overrides default.predict for the PEP-class; gives ensemble risk prediction	& Improved \\
+print.PEP	& print-override	& Overrides default.print for the PEP-class; prints ensemble description and key characteristics	& Novel \\
+coef.PSP	& coef-override	& Overrides default.coef for the PSP-class; extracts single predictors non-zero coefficients at optimum & Novel \\
+plot.PSP	& plot-override& Overrides default.plot for the PSP-class; plots the ${\alpha,\lambda}$ optimization grid based on cross-validation & Novel  \\
+predict.PSP	& predict-override	& Overrides default.predict for the PSP-class; gives a single member's risk predictions	& Novel \\
+print.PP	& print-override	& Overrides default.print for the PSP-class; prints details of a single predictor's characteristics	& Novel \\
+\hline\hline
+S4 specific functions & & & \\
+\hline
+PSP.BOX	& PSP-object diagnostics	& Boxplot of a single variable in a PSP in respect to strata	& Novel \\
+PSP.CSP	& PSP-object survival	& Cumulative survival probabilities at $F(t)$	& Novel \\
+PSP.KM	& PSP-object survival	& Kaplan-Meier with division at a given cutoff point within [0,1]	& Novel \\
+PSP.NA	& PSP-object survival	& Individualized Nelson-Aalen with time-to-event prediction at point $t = F^{-1}(0.5)$	& Novel \\
+PSP.PCA	& PSP-object diagnostics	& Principal Component plot of a single PSP, showing 2 principal axes	& Novel \\
+\hline\hline
+Readily fitted S4-objects & & & \\
+\hline
+DREAM 	& PEP S4-class 	& The DREAM challenge top-performing ePCR model generalized in this package 	& Improved \\
+TYKS 	& PEP S4-class 	& Novel hospital registry ePCR ensemble, which includes all predictors	& Novel \\
+TYKS\_reduced 	& PEP S4-class 	& Novel hospital registry ePCR ensemble, reduced set of predictors 	& Novel \\
+\hline\hline
+Generalized functions & & & \\
+\hline
+bootstrapRegCoefs	& Bootstrap regularized coefficients	& Evaluate significance of $\beta_i$ over bootstrapped datasets with bias	& Improved \\
+conforminput	& Conform input data matrix and model object dimensions	& Creates missing columns to the input matrix through interactions and checks that all requires fields for $\beta$ coefficients are present	& Novel \\
+cv	& Generate cross-validation bins	& General purpose cross-validation binning function	& Improved \\
+cv.alpha	& Perform cross-validation over $\lambda$ for a given $\alpha$	& $\alpha$-specific CV run, called by the grid-function	& Improved \\
+cv.grid	& Perform cross-validation over grid ${\lambda, \alpha}$	& Wrapped function that explores the whole parameter space	& Improved \\
+heatcv	& Plot heatmaps for cross-validation grids	& Function for visualizing the CV surface and local/global maxima	& Improved \\
+integrateRegCurve	& Integrate area under/over regularization curve	& Evaluate importance of $\beta_i$ over whole range of $\lambda$	& Improved \\
+interact.all	& Interactions between all columns in the data	& Extract novel variables from the provided data x	& Re-used from DREAM \\
+interact.part	& Interactions between	selected columns in the data & Extract novel variables from the provided data x	& Re-used from DREAM \\
+meanrank	& Compute mean rank over PEP-members	& Aggregated ensemble prediction over the members	& Re-used from DREAM \\
+NelsonAalen	& Cox-Oakes extension of the Nelson-Aalen estimates for a Cox model	& Estimating individual survival curves using a heuristic method instead of population survival	& Novel \\
+normriskrank	& Normalized risk ranks over PEP-members 	& Normalized risk ranks to range [0,1] after averaging over ensemble members	& Improved \\
+score.cindex	& Concordance-index prediction performance	& Scoring function for cross-validation or otherwise inspecting prediction performance	& Re-used from DREAM \\
+score.iAUC	& Time-integrated AUC prediction performance & Scoring function for cross-validation or otherwise inspecting prediction performance	& Re-used from DREAM \\
+TimeSurvProb	& Predict survival based on cumulative survival probabilities	& Predict survival time using \texttt{NelsonAalen} by identifying first time point where $F^{-1}(t) = 0.5$	& Novel \\
+zt	& Extended \textit{scale}-function	& Performs z-score transformation $\frac{x - \mu_x}{\sigma_x}$ with additional functionality such as NA-imputation	& Re-used from DREAM  \\
+\hline\hline
+Attached datasets & & & \\
+\hline
+TYKSSIMU	& Representative hospital registry data from TYKS	& usage: \textit{data(TYKSSIMU)}	& Novel \\
+xMEDISIMU	& x data matrix of medication cohort	& loaded with \textit{TYKSSIMU}	& Novel \\
+xTEXTSIMU	& x data matrix of text-search cohort	& loaded with \textit{TYKSSIMU}	& Novel \\
+yMEDISIMU	& y responses of medication cohort	& loaded with \textit{TYKSSIMU}	& Novel \\
+yTEXTSIMU	& y responses of text-search cohort	& loaded with \textit{TYKSSIMU}	& Novel \\
+\hline
+  
+\label{tab:funccompare}
+\end{longtable}
+\normalsize
+
+
+
+
+\newpage
+\subsection{Appendix 3 - Abbreviations and terminology}
+
+\begin{itemize}
+	\item \textit{c-index}: Concordance index - scoring metric computed over all possible pairs of observations in survival prediction. It is the fraction of pairs in the data, where the observation with the higher survival time has the higher probability of survival predicted by the model. For further details, see \texttt{timROC} R-package and its function \texttt{timeROC} documentation.
+	\item \textit{iAUC}: Integrated Area Under Curve (over follow-up time) - scoring metric computed within a given time-interval of AUCs at discrete time points in survival prediction. The integrated area over the defined time interval is sensitive to the study follow-up times and therefore is sensitive to the choice of interval. Counter-intuitively, completely randomized iAUC may therefore be therefore be different from 0.5 in contrast to normal AUC. For further details, see \texttt{timeROC} R-package and its \texttt{timeROC} together with the R-package \texttt{Bolstad2} and its \texttt{sintegral} function documentation.
+	\item \textit{OS}: Overall Survival - Clinical follow-up time for patients until death, last observed date of being alive (lost in follow-up) or pre-determined end of the study. OS is typically computed starting from the set date of initiating an intervention in clinical trials.
+\end{itemize}
+
+
+
+
+\newpage
+
+$^*$: equal contribution
+
+\begin{thebibliography}{99}
+
+\bibitem{ref:ePCR} Laajala TD$^*$, Murtoj{\"a}rvi M$^*$, Virkki A, Aittokallio T. \textit{ePCR}: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to real-world patient cohorts. \textit{Manuscript submitted}.
+\bibitem{ref:guinney} Guinney J$^*$, Wang T$^*$, Laajala TD$^*$, et al. Prediction of overall survival for patients with metastatic castration-resistant prostate cancer: development of a prognostic model through a crowdsourced challenge with open clinical trial data. Lancet Oncol. 2017 Jan;18(1):132-142. doi: 10.1016/S1470-2045(16)30560-5.
+\bibitem{ref:coxnet} Simon N, Friedman J, Hastie T, Tibshirani R. Regularization Paths for Cox's Proportional Hazards Model via Coordinate Descent. J Stat Softw. 2011 Mar; 39(5): 1–13. doi: 10.18637/jss.v039.i05
+
+\end{thebibliography}
+
+\end{document}
