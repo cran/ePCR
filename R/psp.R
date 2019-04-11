@@ -150,8 +150,6 @@ setMethod("initialize", "PSP",
 		.Object@nlambda = nlambda
 		.Object@cvfolds = folds
 		.Object@score = scorefunc
-		.Object@cvrepeat = cvrepeat
-		.Object@seed = seeds
 		.Object@strata = strata
 		# Custom interaction / data matrix x expansion function
 		if(!missing(x.expand)) .Object@x.expand = x.expand
@@ -164,17 +162,26 @@ setMethod("initialize", "PSP",
 		.Object@y = y
 
 		tmps <- list()
-		#tmps <- lapply(1:cvrepeat, FUN=function(z, seeds=seeds){
+		# Inspecting the cv repeats & provided RNG seeds
+		# If user has not provided cvrepeat parameter, it is assumed to be the sae as the number of provided seeds
+		if(!missing(seeds)){
+			if(!cvrepeat==length(seeds)) cvrepeat <- length(seeds)
+		}
 		for(z in 1:cvrepeat){	
 			if(verb>-1) cat("--- Cross-validation (", folds, "-folds) repeat run ", z, " of ", cvrepeat, " ---\n\n")
 			# Run the cross-validation in the grid
 			# Give multiple seeds
 			if(!missing(seeds)){
 				tmps[[length(tmps)+1]] <- cv.grid(alphaseq = alphaseq, x = .Object@x.expand(x), y = y, folds = folds, nlamb=nlambda, scorefunc=scorefunc, plot=plot, verb=verb, seed=seeds[z])
+			# Using random seeds and repeating cv according to desired cvrepeats
 			}else{
 				tmps[[length(tmps)+1]]  <- cv.grid(alphaseq = alphaseq, x = .Object@x.expand(x), y = y, folds = folds, nlamb=nlambda, scorefunc=scorefunc, plot=plot, verb=verb)
 			}
 		}
+		.Object@cvrepeat = cvrepeat
+		.Object@seed = seeds
+
+
 		# If multiple CV runs were done, the key CV statistics are averaged over the binning repeats
 		.Object@cvmean = Reduce("+", lapply(tmps, FUN=function(z) z[["mean"]]))/length(tmps)
 		.Object@cvmedian = Reduce("+", lapply(tmps, FUN=function(z) z[["median"]]))/length(tmps)
@@ -183,10 +190,28 @@ setMethod("initialize", "PSP",
 		.Object@cvmax = Reduce("+", lapply(tmps, FUN=function(z) z[["max"]]))/length(tmps)
 
 		# Optimal fit according to the chosen criterion
-		if(criterion %in% c("min", "min.mean")){
-			opt <- which(.Object@cvmean == max(.Object@cvmean), arr.ind=TRUE)
+		if(criterion %in% c("min", "min.mean", "max", "max.mean")){
+			opt <- which(.Object@cvmean == max(.Object@cvmean, na.rm=T), arr.ind=TRUE)
+			if(verb>0){
+				cat("Content of detected 'opt' (optimum in alpha/lambda grid):\n")
+				print(opt)
+			}
+			# Single optimum detected
 			if(dim(opt)[1]==1){
 				# Single unique optimum according to the criterion
+				alphaopt <- as.numeric(rownames(opt)[1])
+				lambdaopt <- opt[1,2] # The only optimum, second column is the lambda value
+			# Multiple optima
+			}else if(nrow(opt)==0){
+				warning("Unable to detect optima in the CV grid; please inspect the CV results manually.\nThis could result for example due to a too high CV fold-count in relation to the N.")
+				alphaopt <- NA
+				lambdaopt <- NA
+			}else{
+				warning("Multiple optima detected in the CV grid; choosing the one with the highest alpha and then highest lambda, but manual inspection is highly encouraged.")
+				# Favor high alpha, and then high lambda
+				opt <- opt[order(opt[,1], rev(opt[,2])),] # Notice rev-addition to lambda (2nd column) - lambda values are in descending order
+				opt <- opt[nrow(opt),,drop=F]			
+				# Pick these this alpha/lambda optimum
 				alphaopt <- as.numeric(rownames(opt)[1])
 				lambdaopt <- opt[1,2] # The only optimum, second column is the lambda value
 			}
@@ -225,14 +250,25 @@ setMethod("initialize", "PSP",
 				}
 			}
 		}else{
-			warning("Illegal 'criterion' parameter, should be one of: min, lambda.1se, alpha.1se")
+			stop("Illegal 'criterion' parameter, should be one of: min, lambda.1se, alpha.1se")
 		}
-		.Object@fit = glmnet::glmnet(x = as.matrix(.Object@x.expand(x)), y = y, family = "cox", 
-			nlambda = nlambda, 
-			alpha = alphaopt)
-		if(verb>-1) cat("--- Computing AUCs for regularization curves for coefficients --- \n\n")
-		# Run integrateRegCurve for the final model fit
-		.Object@regAUC = integrateRegCurve(.Object@fit)
+		# Try to fit model object; run through the ePCR model fitting procedure even if optimums are not detected
+		# If errors occur this allows the user to still customize this vector based on the cv-slots
+		if(all(!is.na(c(alphaopt, lambdaopt)))){
+			# Fit the actual glmnet/coxnet object based on the obtained cross-validation results
+			.Object@fit = glmnet::glmnet(x = as.matrix(.Object@x.expand(x)), y = y, family = "cox", 
+				nlambda = nlambda, 
+				alpha = alphaopt)
+			if(verb>-1) cat("--- Computing AUCs for regularization curves for coefficients --- \n\n")
+			# Run integrateRegCurve for the final model fit
+			.Object@regAUC = integrateRegCurve(.Object@fit)
+			# In some cases the lambda sequence is shorter than indicated by nlambda; in that case pick the last lambda index that was informative
+			if(length(.Object@fit$lambda)<lambdaopt) lambdaopt <- length(.Object@fit$lambda)
+			# Identified optimum parameters according to the criterion
+			.Object@optimum <- c(Alpha = alphaopt, AlphaIndex = which(alphaseq==alphaopt), Lambda = .Object@fit$lambda[lambdaopt], LambdaIndex = lambdaopt)
+		}else{
+			warning("Could not fit the coxnet object to slot @fit after running the CV - problematic entries in the alpha or lambda optimum (slot @optimum)")
+		}
 		
 		if(verb>-1) cat("--- Generating feature list and dictionary --- \n\n")
 		.Object@features = unique(colnames(x))
@@ -241,8 +277,6 @@ setMethod("initialize", "PSP",
 		if(!missing(dictionary)){ # If user has provided a feasible dictionary (by default one is provided alongside ePCR)
 			# TODO
 		}
-		# Identified optimum parameters according to the criterion
-		.Object@optimum <- c(Alpha = alphaopt, AlphaIndex = which(alphaseq==alphaopt), Lambda = .Object@fit$lambda[lambdaopt], LambdaIndex = lambdaopt)
 		if(verb>-1) cat("--- New PSP object successfully created --- \n\n")
 		return(.Object)
 	}

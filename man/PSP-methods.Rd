@@ -53,8 +53,8 @@ PSP.BOX(object, ...)
 
 PSP.CSP(object, ...)
 
-\S4method{PSP.CSP}{PSP}(object, newx, t = seq(from = 1, to = 36 * 30.5, by =
-  1), plot = FALSE)
+\S4method{PSP.CSP}{PSP}(object, newx, t = seq(from = 1, to = 36 * 30.5,
+  by = 1), plot = FALSE)
 
 PSP.NA(object, ...)
 

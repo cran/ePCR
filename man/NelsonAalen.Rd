@@ -4,8 +4,8 @@
 \alias{NelsonAalen}
 \title{Cox-Oakes extension of the Nelson-Aalen estimates for a Cox model}
 \usage{
-NelsonAalen(b, Xold, Xnew, events, time, tpred = 0:round(max(time, na.rm = T),
-  0), plot = FALSE)
+NelsonAalen(b, Xold, Xnew, events, time, tpred = 0:round(max(time, na.rm
+  = T), 0), plot = FALSE)
 }
 \arguments{
 \item{b}{Beta coefficients at optimal glmnet coxnet model (lambda, alpha)}

@@ -5,9 +5,10 @@
 \title{Plot a heatmap of the prediction performance statistic as a function of lambda and alpha combinations}
 \usage{
 heatcv(psp, bias = 0.1, by.rownames = 1, by.colnames = 1,
-  paletcol = c("cyan", "blue", "black", "red", "orange"), paletncol = 1000,
-  xlab = "Alpha-dependent log-Lambda", ylab = "Alpha", main = "",
-  plot.opt = TRUE, plot.1sd = FALSE, ...)
+  paletcol = c("cyan", "blue", "black", "red", "orange"),
+  paletncol = 1000, xlab = "Alpha-dependent log-Lambda",
+  ylab = "Alpha", main = "", plot.opt = TRUE, plot.1sd = FALSE,
+  ...)
 }
 \arguments{
 \item{psp}{An S4-class PSP-object to plot, as built using the ePCR-package}

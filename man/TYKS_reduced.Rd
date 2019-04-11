@@ -15,7 +15,7 @@ ePCR model fitted to the Turku University Hospital cohorts (features derived fro
 Notice that in order to save space, some slots in the S4 object have been set to null.
 }
 \references{
-Laajala TD, Murtojärvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort. Manuscript in preparation.
+Laajala TD, Murtojärvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort. Laajala TD, Murtojärvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort. Bioinformatics. 2018 Jun 15. doi: 10.1093/bioinformatics/bty477.
 }
 \author{
 Teemu Daniel Laajala \email{teelaa@utu.fi}

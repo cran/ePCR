@@ -4,8 +4,8 @@
 \alias{cv.grid}
 \title{Cross-validation runs for risk predition for a grid of predetermined alpha values and their conditional lambda values}
 \usage{
-cv.grid(alphaseq = seq(from = 0, to = 1, by = 0.1), seed, x, y, folds = 10,
-  nlamb = 100, verb = 0, scorefunc, plot = FALSE)
+cv.grid(alphaseq = seq(from = 0, to = 1, by = 0.1), seed, x, y,
+  folds = 10, nlamb = 100, verb = 0, scorefunc, plot = FALSE)
 }
 \arguments{
 \item{alphaseq}{Sequence of alpha values to test, which should be within [0,1] (with alpha = 0 being ridge regression, 0 < alpha < 1 being elastic net, and alpha = 1 being LASSO)}

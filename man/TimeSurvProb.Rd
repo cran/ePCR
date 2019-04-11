@@ -4,8 +4,8 @@
 \alias{TimeSurvProb}
 \title{Predict cumulative survival probabilities for new data at given time points}
 \usage{
-TimeSurvProb(fit, time, event, olddata, newdata, s, times = c(1:36) * 30.5,
-  plot = FALSE)
+TimeSurvProb(fit, time, event, olddata, newdata, s, times = c(1:36) *
+  30.5, plot = FALSE)
 }
 \arguments{
 \item{fit}{A single regularized Cox regression model fitted using glmnet}

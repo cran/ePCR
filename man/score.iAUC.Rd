@@ -21,7 +21,9 @@ score.iAUC(pred, time, event, real, times = seq(6, 30, by = 1) * 30.5)
 The integrated area under the ROC-curve over time
 }
 \description{
-Time-wise integrated prediction for survival is performed by this scoring function using the timeROC-package. It's offered as an alternative to the score.cindex-function, with the difference that time-wise integrated AUC is sensitive to the choice of time-window. By default (as similar to DREAM 9.5 mCRPC challenge), the AUCs are determined at 6 to 30 months, and the AUC is then normalized to a score within [0,1]. Notice that for studies shorter or longer than this proposed time window, the scoring function should be adjusted accordingly.
+Time-wise integrated prediction for survival is performed by this scoring function using the timeROC-package. 
+It's offered as an alternative to the score.cindex-function with the difference that time-wise integrated AUC is sensitive to the choice of time-window. 
+By default (as similar to DREAM 9.5 mCRPC challenge), the AUCs are determined at 6 to 30 months, and the AUC is then normalized to a score within [0,1]. Notice that for studies shorter or longer than this proposed time window, the scoring function should be adjusted accordingly.
 }
 \examples{
 # A random prediction ought to be near 0.5 

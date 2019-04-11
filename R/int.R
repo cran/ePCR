@@ -214,7 +214,7 @@ interact.part <- function(input, first, second){
 #
 # Pred should be a numeric risk score
 # 'time' and indicates censoring or event time, while 'event' indicates either death (1) or right-censoring (0)
-#' @importFrom survival Surv survConcordance
+#' @importFrom survival Surv concordance
 #' @examples
 #' # A random prediction ought to be near 0.5
 #' # c-index is not sensitive to time scale, as it tests pairwise prediction accuracy
@@ -232,14 +232,16 @@ score.cindex = function(pred, time, event, real){
 		surv <- real
 	}
 	# Compute c-index object
-	cindex <- survival::survConcordance(surv ~ pred)$concordance
+	cindex <- survival::concordance(surv ~ pred)$concordance
 	# Return concordance index (c-index)
 	cindex	
 }
 
 #' Scoring function for evaluating survival prediction by time-wise integrated AUC
 #' 
-#' Time-wise integrated prediction for survival is performed by this scoring function using the timeROC-package. It's offered as an alternative to the score.cindex-function, with the difference that time-wise integrated AUC is sensitive to the choice of time-window. By default (as similar to DREAM 9.5 mCRPC challenge), the AUCs are determined at 6 to 30 months, and the AUC is then normalized to a score within [0,1]. Notice that for studies shorter or longer than this proposed time window, the scoring function should be adjusted accordingly.
+#' Time-wise integrated prediction for survival is performed by this scoring function using the timeROC-package. 
+#' It's offered as an alternative to the score.cindex-function with the difference that time-wise integrated AUC is sensitive to the choice of time-window. 
+#' By default (as similar to DREAM 9.5 mCRPC challenge), the AUCs are determined at 6 to 30 months, and the AUC is then normalized to a score within [0,1]. Notice that for studies shorter or longer than this proposed time window, the scoring function should be adjusted accordingly.
 #' 
 #' @param pred Numeric risk score for each event
 #' @param time A vector of event or censoring times
