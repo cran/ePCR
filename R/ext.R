@@ -21,12 +21,12 @@
 #' @author Teemu Daniel Laajala \email{teelaa@@utu.fi}
 #' @export
 meanrank = function(x){ # x is a list or matrix of risk scores per ensemble member (column = ensemble member)
-	if(class(x)=="list"){
+	if("list" %in% class(x)){
 		apply(do.call("cbind", lapply(x, FUN=rank)), MARGIN=1, FUN=mean)
-	}else if(class(x)=="matrix"){
+	}else if("matrix" %in% class(x)){
 		apply(apply(x, MARGIN=2, FUN=rank), MARGIN=1, FUN=mean)
 	}else{
-		stop(paste("Error in mean rank computation for x, invalid class:", class(x)))
+		stop(paste("Error in mean rank computation for x, invalid class:", paste(class(x), collapse=" ")))
 	}
 }
 
@@ -53,7 +53,8 @@ normriskrank <- function(x){
 #' @export
 conforminput <- function(object, newx){
 	if(class(object)=="PSP"){
-		feats <- rownames(glmnet::predict.coxnet(object@fit, s=object@optimum["Lambda"], type="coefficients"))
+		#feats <- rownames(glmnet::predict.coxnet(object@fit, s=object@optimum["Lambda"], type="coefficients"))
+		feats <- rownames(predict(object@fit, s=object@optimum["Lambda"], type="coefficients"))
 		expandx <- object@x.expand(as.matrix(newx))
 		comformx <- as.data.frame(lapply(feats, FUN=function(z){
 			if(z %in% colnames(expandx)){
@@ -65,7 +66,8 @@ conforminput <- function(object, newx){
 		colnames(comformx) <- feats
 		as.matrix(comformx[,feats])
 	}else if(class(object)=="PEP"){
-		feats <- rownames(glmnet::predict.coxnet(object@PSPs[[1]]@fit, s=object@PSPs[[1]]@optimum["Lambda"], type="coefficients"))
+		#feats <- rownames(glmnet::predict.coxnet(object@PSPs[[1]]@fit, s=object@PSPs[[1]]@optimum["Lambda"], type="coefficients"))
+		feats <- rownames(predict(object@PSPs[[1]]@fit, s=object@PSPs[[1]]@optimum["Lambda"], type="coefficients"))
 		expandx <- object@PSPs[[1]]@x.expand(as.matrix(newx))
 		comformx <- as.data.frame(lapply(feats, FUN=function(z){
 			if(z %in% colnames(expandx)){
@@ -110,8 +112,10 @@ TimeSurvProb <- function(fit, time, event, olddata, newdata, s, times=c(1:36)*30
 	# Survival response as 2-column matrix
 	sur <- as.matrix(survival::Surv(time=time, event=event))
 	# Linear predictor
-	lp1 <- as.numeric(glmnet::predict.coxnet(fit, newx = as.matrix(olddata), s = s, type = "link"))
-	lp2 <- as.numeric(glmnet::predict.coxnet(fit, newx = as.matrix(newdata), s = s, type = "link"))
+	#lp1 <- as.numeric(glmnet::predict.coxnet(fit, newx = as.matrix(olddata), s = s, type = "link"))
+	lp1 <- as.numeric(predict(fit, newx = as.matrix(olddata), s = s, type = "link"))
+	#lp2 <- as.numeric(glmnet::predict.coxnet(fit, newx = as.matrix(newdata), s = s, type = "link"))
+	lp2 <- as.numeric(predict(fit, newx = as.matrix(newdata), s = s, type = "link"))
 	# Use base cumulative base hazard computed from package c060
 	# c060 does not export basesurv-function; code is from c060
 	#basesur <- c060:::basesurv(response=sur, lp=lp1, times.eval=times)

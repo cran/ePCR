@@ -1,8 +1,8 @@
 Package: ePCR
 Type: Package
 Title: Ensemble Penalized Cox Regression for Survival Prediction
-Version: 0.9.9-9
-Date: 2019-04-11
+Version: 0.9.9-11
+Date: 2019-11-23
 Author: Teemu Daniel Laajala <teelaa@utu.fi> [aut, cre], Mika Murtoj<e4>rvi <mianmu2@hotmail.com> [ctb]
 Maintainer: Teemu Daniel Laajala <teelaa@utu.fi>
 Depends: R (>= 3.0.0)
@@ -14,7 +14,8 @@ License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 VignetteBuilder: R.rsp
+LazyData: true
 NeedsCompilation: no
-Packaged: 2019-04-11 10:49:28 UTC; teemu
+Packaged: 2019-11-23 23:50:07 UTC; Daniel
 Repository: CRAN
-Date/Publication: 2019-04-11 11:25:20 UTC
+Date/Publication: 2019-11-24 05:20:02 UTC

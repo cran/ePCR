@@ -332,7 +332,8 @@ setMethod("plot", "PSP",
 #' @export
 setMethod("coef", "PSP",
 	function(object){
-		predict.coxnet(object@fit, s = object@optimum["Lambda"], type = "coefficients")
+		#predict.coxnet(object@fit, s = object@optimum["Lambda"], type = "coefficients")
+		predict(object@fit, s = object@optimum["Lambda"], type = "coefficients")
 	}
 )
 #' predict.PSP: Predict for a novel patient from current PSP
@@ -346,9 +347,11 @@ setMethod("predict", "PSP",
 				if(verb>-1) cat("--- Missing entries detected in newx, running defined imputation function ---\n\n")
 				newx <- impute::impute.knn(newx)$data
 			}
-			glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(newx)), type=type, s=object@optimum["Lambda"])
+			#glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(newx)), type=type, s=object@optimum["Lambda"])
+			predict(object@fit, newx=as.matrix(object@x.expand(newx)), type=type, s=object@optimum["Lambda"])
 		}else{
-			glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(object@x)), type=type, s=object@optimum["Lambda"])
+			#glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(object@x)), type=type, s=object@optimum["Lambda"])
+			predict(object@fit, newx=as.matrix(object@x.expand(object@x)), type=type, s=object@optimum["Lambda"])
 		}
 	}
 )

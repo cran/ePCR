@@ -89,7 +89,8 @@ bootstrapRegCoefs <- function(fit, lambda, boot=1000, epsilon = 10^-6){
 	# Original data objects need to be present in the environment, as they're not stored in the fitted object
 	x = eval(expr=as.list(fit$call)$x)
 	y = eval(expr=as.list(fit$call)$y)
-	betas = glmnet::predict.coxnet(fit, type="coefficients", s=lambda)[,1]
+	#betas = glmnet::predict.coxnet(fit, type="coefficients", s=lambda)[,1]
+	betas = predict(fit, type="coefficients", s=lambda)[,1]
 	# Construct a bootstrap model fit call
 	callboot = fit$call
 	callboot$x = quote(xboot)
@@ -104,7 +105,8 @@ bootstrapRegCoefs <- function(fit, lambda, boot=1000, epsilon = 10^-6){
 			yboot = y[r,] # Possibly a survival object or such
 		}
 		rfit = eval(expr=callboot)
-		glmnet::predict.coxnet(rfit, type="coefficients", s=lambda)[,1]
+		#glmnet::predict.coxnet(rfit, type="coefficients", s=lambda)[,1]
+		predict(rfit, type="coefficients", s=lambda)[,1]
 	}))
 	# Compute p-value like statistics
 	ps = unlist(lapply(1:nrow(boots), FUN=function(z){
@@ -419,7 +421,8 @@ cv.alpha <- function(
 		if(verb>0) print("Predicting from the CV fit...")
 
 		## INNER FOLD PREDICTION
-		pred <- glmnet::predict.coxnet(fit, newx=as.matrix(test.x), s=lamb, type="response")
+		#pred <- glmnet::predict.coxnet(fit, newx=as.matrix(test.x), s=lamb, type="response")
+		pred <- predict(fit, newx=as.matrix(test.x), s=lamb, type="response")
 		if(verb>0) print("Obtaining score for the CV fit in predicting the left-out part...")
 
 		# Compute prediction scoring per each lambda prediction
@@ -592,6 +595,3 @@ cv.grid <- function(
 	# Return trimmed object
 	object
 }
-
-
-

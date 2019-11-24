@@ -1,9 +1,19 @@
+ePCR v0.9.9-10/11 (Release date: 2019-11-23)
+==============
+
+Changes:
+
+* Updated compatibility with the latest version of glmnet and its changed namespace.
+* Updated newest variable visibility requirements in examples
+* Fixed a bug that occurred in Debian distro (meanrank-function class checking)
+
+
 ePCR v0.9.9-9 (Release date: 2019-04-11)
 ==============
 
 Changes:
 
-* Fixed deprecation of the function survival::survConcordance using survival::concordance
+* Fixed deprecation of the function survival::survConcordance using survival::concordance.
 
 ePCR v0.9.9-8 (Release date: 2018-07-30)
 ==============

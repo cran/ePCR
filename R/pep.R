@@ -180,12 +180,14 @@ setMethod("predict", "PEP",
 		if(!missing(newx)){
 			preds <- lapply(object@PSPs, FUN=function(z){
 				# Novel data prediction
-				glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
+				#glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
+				predict(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
 			})		
 		}else{
 			preds <- lapply(object@PSPs, FUN=function(z){
 				# Demonstrate using the data matrix in stored in ePCR object
-				glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
+				#glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
+				predict(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
 			})		
 		}
 		# Transforming ensemble prediction lists to matrices
