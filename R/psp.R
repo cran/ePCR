@@ -19,6 +19,7 @@ setOldClass("impute")
 #'
 #' @name PSP-class
 #' @rdname PSP-class
+#' @import methods
 #' @importFrom impute impute.knn
 #' @slot description A general user-provided string describing the PSP
 #' @slot features A character vector indicating feature names
@@ -59,7 +60,7 @@ setOldClass("impute")
 #' PSP.PCA(psp_ex) # PCA plot of training data
 #' PSP.BOX(psp_ex) # Boxplots, here for the first training variable
 #' PSP.CSP(psp_ex) # Cumulative survival probabilities for the training data
-#' PSP.NA(psp_ex) # Time-to-event Nelson-Aalen heuristic algorithm
+#' invisible(PSP.NA(psp_ex)) # Time-to-event Nelson-Aalen heuristic algorithm
 #'
 #' \dontrun{
 #' # Computationally intensive novel PSP-fitting is omitted from the test runs
@@ -333,7 +334,7 @@ setMethod("plot", "PSP",
 setMethod("coef", "PSP",
 	function(object){
 		#predict.coxnet(object@fit, s = object@optimum["Lambda"], type = "coefficients")
-		predict(object@fit, s = object@optimum["Lambda"], type = "coefficients")
+		glmnet::predict.glmnet(object@fit, s = object@optimum["Lambda"], type = "coefficients")
 	}
 )
 #' predict.PSP: Predict for a novel patient from current PSP
@@ -347,10 +348,10 @@ setMethod("predict", "PSP",
 				if(verb>-1) cat("--- Missing entries detected in newx, running defined imputation function ---\n\n")
 				newx <- impute::impute.knn(newx)$data
 			}
-			#glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(newx)), type=type, s=object@optimum["Lambda"])
+			# Novel data prediction
 			predict(object@fit, newx=as.matrix(object@x.expand(newx)), type=type, s=object@optimum["Lambda"])
 		}else{
-			#glmnet::predict.coxnet(object@fit, newx=as.matrix(object@x.expand(object@x)), type=type, s=object@optimum["Lambda"])
+			# Demonstrate using the data matrix in stored in ePCR object
 			predict(object@fit, newx=as.matrix(object@x.expand(object@x)), type=type, s=object@optimum["Lambda"])
 		}
 	}
@@ -370,7 +371,7 @@ setGeneric("PSP.KM", function(object, ...) { standardGeneric("PSP.KM") })
 #' @aliases PSP.KM,PSP,ANY-method
 setMethod("PSP.KM", "PSP",
 	function(object, cutoff=0.5){
-		class <- as.factor(c("Low", "High")[(normriskrank(predict(object))>=cutoff)+1])
+		class <- as.factor(c("Low", "High")[(normriskrank(predict(object@fit, newx=as.matrix(object@x.expand(object@x)), type="response", s=object@optimum["Lambda"]))>=cutoff)+1])
 		surv <- survival::survfit(object@y ~ class)
 		plot(surv, col=1:2)
 		legend("bottomleft", col=1:2, legend=c("Lower cutoff", "Higher cutoff"), bty="n", lwd=1)

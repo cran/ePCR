@@ -3,11 +3,7 @@
 \docType{package}
 \name{ePCR}
 \alias{ePCR}
-\alias{ePCR-package}
 \title{Ensemble Penalized Cox Regression Modeling for Overall Survival and Time-to-Event Prediction in Advanced Prostate Cancer}
-\description{
-Ensemble Penalized Cox Regression Modeling for Overall Survival and Time-to-Event Prediction in Advanced Prostate Cancer
-}
 \references{
 Laajala TD, Murtojärvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort. Laajala TD, Murtojärvi M, Virkki A, Aittokallio T. ePCR: an R-package for survival and time-to-event prediction in advanced prostate cancer, applied to a real-world patient cohort. Bioinformatics. 2018 Jun 15. doi: 10.1093/bioinformatics/bty477.
 

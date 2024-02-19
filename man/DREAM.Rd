@@ -4,7 +4,9 @@
 \name{DREAM}
 \alias{DREAM}
 \title{FIMM-UTU DREAM winning implementation of an ensemble of Penalized Cox Regression models for mCPRC research (ePCR)}
-\format{An object of class \code{PEP} of length 1.}
+\format{
+An object of class \code{PEP} of length 1.
+}
 \usage{
 data(ePCRmodels)
 }

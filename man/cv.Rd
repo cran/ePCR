@@ -4,8 +4,7 @@
 \alias{cv}
 \title{Function that creates customized cross-validation folds}
 \usage{
-cv(x, fold = 10, strata = rep(1, times = nrow(x)), shuffle = TRUE,
-  seed = NULL)
+cv(x, fold = 10, strata = rep(1, times = nrow(x)), shuffle = TRUE, seed = NULL)
 }
 \arguments{
 \item{x}{The original data matrix or data.frame}

@@ -4,8 +4,16 @@
 \alias{cv.alpha}
 \title{Cross-validation runs for risk predition at a single value of alpha}
 \usage{
-cv.alpha(x, y, folds = 10, alpha = 0.5, nlamb = 100, verb = 0,
-  scorefunc, plot = FALSE)
+cv.alpha(
+  x,
+  y,
+  folds = 10,
+  alpha = 0.5,
+  nlamb = 100,
+  verb = 0,
+  scorefunc,
+  plot = FALSE
+)
 }
 \arguments{
 \item{x}{The data matrix to use for predictions}

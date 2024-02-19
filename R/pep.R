@@ -111,9 +111,9 @@ setMethod("initialize", "PEP",
 	function(.Object,
 		PSPs
 ){
-	if(!class(PSPs)=="list"){
+	if(!inherits(PSPs,"list")){
 		stop("PSPs should be a list that consists of PSP-objects")	
-	}else if(!all(unlist(lapply(PSPs, FUN=function(z) class(z)=="PSP")))){
+	}else if(!all(unlist(lapply(PSPs, FUN=function(z) inherits(z,"PSP"))))){
 		stop("The list PSPs should consist solely of PSP-objects")
 	}
 	.Object@PSPs = PSPs
@@ -180,18 +180,16 @@ setMethod("predict", "PEP",
 		if(!missing(newx)){
 			preds <- lapply(object@PSPs, FUN=function(z){
 				# Novel data prediction
-				#glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
 				predict(z@fit, newx=as.matrix(x.expand(newx)), s=z@optimum["Lambda"])
 			})		
 		}else{
 			preds <- lapply(object@PSPs, FUN=function(z){
 				# Demonstrate using the data matrix in stored in ePCR object
-				#glmnet::predict.coxnet(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
 				predict(z@fit, newx=as.matrix(x.expand(z@x)), s=z@optimum["Lambda"])
 			})		
 		}
 		# Transforming ensemble prediction lists to matrices
-		if(class(preds)=="list") preds <- matrix(unlist(preds), ncol=length(preds))
+		if(inherits(preds,"list")) preds <- matrix(unlist(preds), ncol=length(preds))			
 		# Ensemble prediction, final risk scores over all PSPs
 		if(type=="ensemble"){
 			if(missing(newx)) stop("For a novel ensemble prediction a 'newx' should be provided")

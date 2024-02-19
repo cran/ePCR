@@ -228,7 +228,7 @@ interact.part <- function(input, first, second){
 #' @export
 score.cindex = function(pred, time, event, real){ 
 	# Survival object for the observed data
-	if(!missing(real) & !class(real)=="Surv"){
+	if(!missing(real) & !inherits(real,"Surv")){
 		surv <- survival::Surv(time, event)
 	}else{
 		surv <- real
@@ -272,13 +272,13 @@ score.iAUC = function(pred, time, event, real,
 	# compute iAUC from 6 to 30 months; sequence of months
 	times = seq(6,30,by=1) * 30.5){
 	# Survival object for the observed data
-	if(!missing(real) & !class(real)=="Surv"){
+	if(!missing(real) & !inherits(real,"Surv")){
 		surv <- survival::Surv(time, event)
 	}else{
 		surv <- real
 	}
 	# Compute timeROC AUCs at time points and then integrate area under the curve
-	if(class(real)=="Surv"){ # Open up a Surv-object if such was provided
+	if(inherits(real,"Surv")){ # Open up a Surv-object if such was provided
 		event = real[,"status"]
 		time = real[,"time"]
 	}
@@ -394,7 +394,7 @@ cv.alpha <- function(
 	if(verb>0) print("Determining suitable lambda-sequence...")
 	
 	# Determine a suitable lambda sequence for all data
-	if(class(y)=="Surv"){
+	if(inherits(y,"Surv")){
 		lamb <- glmnet::glmnet(y=y, x=as.matrix(x), family="cox", alpha=alpha, nlambda=nlamb)$lambda
 	}else{
 		lamb <- glmnet::glmnet(y=Surv(time=y[,"LKADT_P"], event=y[,"DEATH"]), x=as.matrix(x), family="cox", alpha=alpha, nlambda=nlamb)$lambda
@@ -412,7 +412,7 @@ cv.alpha <- function(
 		if(verb>0) print("Running cross-validation loop instance...")
 
 		## GLMNET FIT	
-		if(class(y)=="Surv"){
+		if(inherits(y,"Surv")){
 			fit <- glmnet::glmnet(y=train.y, x=as.matrix(train.x), family="cox", alpha=alpha, lambda=lamb)
 		}else{
 			fit <- glmnet::glmnet(y=Surv(time=train.y[,"LKADT_P"], event=train.y[,"DEATH"]), x=as.matrix(train.x), family="cox", alpha=alpha, lambda=lamb)		
@@ -584,9 +584,9 @@ cv.grid <- function(
 	
 	}
 	
-	if(class(object)=="PSP"){
+	if(inherits(object,"PSP")){
 		object <- trim(object)
-	}else if(class(object)=="PEP"){
+	}else if(inherits(object,"PEP")){
 	
 	}else{
 		stop(paste("object input should be either a PSP or a PEP object, current object class:", class(object)))

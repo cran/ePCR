@@ -73,7 +73,7 @@ PSP.KM(psp_ex, cutoff = 0.5) # Kaplan-Meier
 PSP.PCA(psp_ex) # PCA plot of training data
 PSP.BOX(psp_ex) # Boxplots, here for the first training variable
 PSP.CSP(psp_ex) # Cumulative survival probabilities for the training data
-PSP.NA(psp_ex) # Time-to-event Nelson-Aalen heuristic algorithm
+invisible(PSP.NA(psp_ex)) # Time-to-event Nelson-Aalen heuristic algorithm
 
 \dontrun{
 # Computationally intensive novel PSP-fitting is omitted from the test runs

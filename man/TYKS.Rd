@@ -4,7 +4,9 @@
 \name{TYKS}
 \alias{TYKS}
 \title{ePCR model fitted to the Turku University Hospital cohorts (all features)}
-\format{An object of class \code{PEP} of length 1.}
+\format{
+An object of class \code{PEP} of length 1.
+}
 \usage{
 data(ePCRmodels)
 }

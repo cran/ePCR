@@ -1,0 +1,233 @@
+---
+title: "User guide to the ePCR R-package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{User guide to the ePCR R-package}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+# Description of the ePCR package
+
+`ePCR` is an R-package intended for the survival analysis of advanced prostate cancer. This document is a basic introduction to the functionality of `ePCR` and a general overview to the possible analysis workflows for clinical trial or hospital registry cohorts. The approach leverages ensemble-driven usage of single Cox regression based regression models named _ePCR_, which was the top performing approach in the DREAM 9.5 Prostate Cancer Challenge (Guinney et al, 2017).
+
+The latest version of `ePCR` is available in the Comprehensive R Archive Network [CRAN](https://cran.r-project.org/package=ePCR). CRAN mirrors are by default available in the installation of R, and the `ePCR` package is installable using the R terminal command: `install.packages("ePCR")`. This should prompt the user to select a nearby CRAN mirror, after which the installation of `ePCR` and its dependencies are automatically performed. After the `install.packages`-call, the `ePCR` package can be loaded with either command `library("ePCR")`.
+
+The following notation is used in the document: R commands, package names and function names are written in `typewriter font`. The notation of format `pckgName::funcName` indicates that the function `funcName` is called from the package `pckgName`, which is prominently used in the underlying R code due to package namespaces. This document as well as other useful PDFs can be inspected using the `browseVignettes` function for any package in R.
+
+## Loading the example clinical cohorts into the R session
+
+The `ePCR`-package is provided with two example hospital registry datasets. These datasets represent confidential hospital registry cohorts, to which kernel density estimation was fitted. Illustrative virtual patients were then generated from the kernel estimates and are provided here in the example datasets. Please see the accompanying `ePCR` publication for further details on the two Turku University Hospital cohorts (Laajala et al., 2018), and the Synapse site for DREAM 9.5 PCC for accessing the original DREAM data (Guinney, Wang, Laajala et al. 2017). The exemplifying datasets can be loaded into an R session using:
+
+```{r}
+
+library(ePCR)
+# Kernel density simulated patients from Turku University Hospital (TYKS)
+# Data consists of TEXT cohort (text-search found patients) 
+# and MEDI (patients identified using medication and few keywords)
+data(TYKSSIMU)
+# The following data matrices x and survival responses y become available
+head(xTEXTSIMU); head(yTEXTSIMU) 
+head(xMEDISIMU); head(yMEDISIMU)
+
+library(survival)
+
+```
+
+\section{Fitting new ePCR S4-objects}
+
+It is important to disginguish between the `PSP` and `PEP` objects, which represent a single penalized Cox regression model and an ensemble of Cox regression models, respectively. `PSP` objects are penalized/regularized Cox regression models fitted to a particular dataset by exploring its $\{\lambda, \alpha\}$ parameter space. Notice that the sequence of $\lambda$ is dependent on the $\alpha \in [0,1]$. The regularized/penalized fitting procedure in `ePCR` is provided by the `glmnet`-package (Simon et al., 2011), although custom cross-validation and other supporting functionality is provided independently.
+
+After fitting suitable candidate `PSP`-objects (Penalized Single Predictors), these will be aggregated to the ensemble structure `PEP` (Penalized Ensemble Predictor). The key input to `PEP`-constructor are the `PSP` intended for the use of the ensemble. We will start off by introducing the fine-tuning and fitting of `PSP`s. For this purpose the generic S4-class contructor `new` will be called with the main parameter indicating that we wish to construct a `PSP`-object.
+
+## PSP-objects
+
+The key attributes provided for the PSP-constructor are the following parameters (see `?'PSP-class'` in R for further documentation):
+
+- `x`: The input data matrix where rows corresponding to patients and columns to potential predictors.
+- `y`: The `Surv`-class response vector as required by Cox regression and `glmnet` in survival prediction.
+- `seeds`: An integer vector or a single value for setting the random seed for cross-validation. Notice that this is highly suggested for reproducibility. If a multiple seed integers are provided, the cross-validation will be conducted separately for each. This will smoothen the cross-validation surface, but will take multiply the computational time required to fit a model.
+- `score`: The scoring function utilized in evaluating the generalization ability of the fitted model in cross-validation; readily implemented scoring functions include `score.iAUC` and `score.cindex`, but custom scoring functions are also allowed. 
+- `alphaseq`: Sequence of alpha values. The extreme ends $\alpha = 1$ is LASSO regression and $\alpha = 0$ is Ridge Regression. $\alpha \in ]0,1[$ is generally referred to as Elastic Net. Notice that LASSO and Ridge Regression have noticeably different characteristics as they utilizeo only the $L_1$ and $L_2$ norms, respectively; for example, a Ridge Regression model will never have its coefficients exactly zero. Furthermore, for co-linear predictors LASSO tends to pick a single one, while Ridge Regression picks multiple ones and spreads the overall effect over these predictors. Depending on the ultimate prediction purpose, one may prefer one or the other and can tailor `alphaseq` to suit their needs. By default we suggest utilizing an evenly spaced `alphaseq` over $[0,1]$ at least for preliminary search. 
+- `nlambda`: Number of $\lambda$ tested as a function of the corresponding $\alpha$. By default `glmnet` suggests 100 values which are picked from a feasible range between model including all coefficients and converged model where no further penalization is possible.
+- `folds`: Number of folds in the cross-validation (minimum 3, maximum n obs = LOO-CV).
+
+For the sake of the example, we will construct an `ePCR` model ensemble that consists of two `PSP`-objects; one from the medication curated cohort and other from the text search cohort. We will leave out a small portion of medication and text search patients for a small test set, to later evaluate the generalization ability of the ensemble. Notice however that this is not a proper evaluation as the patients are not from an independent source, and therefore give an optimistic view to the generalization capability of the model(s).
+
+```{r message=FALSE, warning=FALSE}
+
+testset <- 1:30
+# Medication cohort fit
+# Leaving out patients into a separate test set using negative indices
+psp_medi <- new("PSP", 
+ 	# Input data matrix x (example data loaded previously)
+ 	x = xMEDISIMU[-testset,],
+ 	# Response vector, 'surv'-object
+ 	y = yMEDISIMU[-testset,"surv"],
+ 	# Seeds for reproducibility
+ 	seeds = c(1,2),
+ 	# If user wishes to run the CV binning multiple times,
+ 	# this is possible by averaging over them for smoother CV heatmap.
+ 	cvrepeat = 2,
+ 	# Using the concordance-index as prediction accuracy in CV
+ 	score = score.cindex,
+ 	# Alpha sequence
+ 	alphaseq = seq(from=0, to=1, length.out=6),
+ 	# Using glmnet's default nlambda of 100
+ 	nlambda = 100,
+ 	# Running the nominal 10-fold cross-validation
+ 	folds = 10,
+ 	# x.expand slot is a function that would allow interaction terms
+ 	# For the sake of the simplicity we will consider identity function
+ 	x.expand = function(x) { as.matrix(x) }
+)
+
+```
+
+The parameters for the second `PSP` are similar to the one above. Notice that with the `PSP`-members, user can tailor multiple parameters to best suit the data.
+
+```{r message=FALSE, warning=FALSE}
+
+# Text run similar to above
+# Leaving out patients into a separate test set using negative indices
+psp_text <- new("PSP", 
+ 	x = xTEXTSIMU[-testset,],
+ 	y = yTEXTSIMU[-testset,"surv"],
+ 	seeds = c(3,4),
+ 	cvrepeat = 2,
+ 	score = score.cindex,
+ 	alphaseq = seq(from=0, to=1, length.out=6),
+ 	nlambda = 100,
+ 	folds = 10,
+ 	x.expand = function(x) { as.matrix(x) }
+)
+
+```
+
+```{r}
+
+# Taking a look on the show-method for PSP:
+psp_medi
+
+```
+
+```{r fig1, fig.height = 7, fig.width = 7, fig.align = "center"}
+
+# Plot the CV-surface of the fitted PSP:
+plot(psp_medi, 
+ 	# Showing only every 10th row and column name (propagated to heatcv-function)
+ 	by.rownames=10, by.colnames=10, 
+ 	# Adjust main title and tilt the bias of the color key legend (see ?heatcv)
+ 	main="C-index CV for psp_medi", bias=0.2)
+
+```
+
+
+Noticeably, the cross-validation surface suggests different optimized penalization parameters for the two ensemble members. This most likely stems from systematic differences in the two cohorts, to which end the `ePCR` methodology offers an ensemble-driven alternative to account for differences between patient substrata.
+
+
+```{r fig2, fig.height = 7, fig.width = 7, fig.align = "center"}
+
+plot(psp_text, 
+ 	# Showing only every 10th row and column name (propagated to heatcv-function)
+ 	by.rownames=10, by.colnames=10, 
+ 	# Adjust main title and tilt the bias of the color key legend (see ?heatcv)
+ 	main="C-index CV for psp_text", bias=0.2)	
+
+```
+
+In addition to providing the CV-grid, the identified optimal parameters are available for downstream analyses:
+
+```{r}
+psp_medi@optimum
+psp_text@optimum
+slotNames(psp_medi)
+```
+
+## PEP-objects
+
+Once the `PSP`-objects have been constructed, they are aggregated to the corresponding Penalized Ensemble Predictor (PEP). The `PEP` objects aggregate `PSP` objects from various data slices or optimization criteria, and create an ensemble predictor that averages over the provided single predictors. As such, its most important input is the list of desired `PSP`-objects:
+
+```{r}
+
+pep_tyks <- new("PEP",
+ 	# The main input is the list of PSP objects
+ 	PSPs = list(psp_medi, psp_text)
+)
+# These PSPs were constructed using the example code above.
+pep_tyks
+
+```
+
+## Predictions based on PEP/PSP-objects
+
+```{r}
+
+# Conduct naive test set evaluation
+xtest <- rbind(xMEDISIMU[testset,], xTEXTSIMU[testset,])
+ytest <- rbind(yMEDISIMU[testset,], yTEXTSIMU[testset,])
+# Perform survival prediction based on the PEP-ensemble we've created
+xpred <- predict(pep_tyks, newx=as.matrix(xtest), type="ensemble")
+# Construct a survival object using the Surv-class
+ytrue <- Surv(time = ytest[,"surv"][,"time"], event = ytest[,"surv"][,"status"])
+# Test c-index between our constructed ensemble prediction and true response
+tyksscore <- score.cindex(pred = xpred, real = ytrue)
+print(paste("TYKS example c-index:", round(tyksscore, 4)))
+
+```
+
+# Using the provided DREAM and TYKS ePCR-models
+
+The `ePCR` R-package comes with readily fitted `ePCR`-ensembles from the work by (Guinney, Wang, Laajala et al. 2017) as well as from hospital registry cohorts. Due to data confidentiality issues, the original data matrices or responses are not provided in the S4-objects (although normally they would be in the slots `@x` and `@y`, respectively). 
+
+In order to gain access to the original data by Guinney et al., the processed data can be accessed as raw `.csv` files or R workspaces at the corresponding [Synapse workspace](https://www.synapse.org//#!Synapse:syn4227610/files/).
+
+Accessing the Turku University Hospital registry cohort requires a research permit and users are encouraged to contact the Center for Clinical Informatics (Arho.Virkki@tyks.fi) for further information.
+
+Despite not providing the original data matrices, the ensemble model fits and their coefficients as a function of $\{\lambda, \alpha\}$ are fully functional. They are therefore suitable for conducting predictions for future patients or for studying effect within the estimated models/ensembles. These model objects can be loaded in `ePCR` using:
+
+```{r}
+data(ePCRmodels)
+class(DREAM)
+class(TYKS)
+```
+
+The `DREAM` S4-object is the top-performing mCRPC OS-predicting ensemble from Guinney et al., while the TYKS models are fitted to the original Turku University Hospital cohorts. These model objects can be used for prediction similarly to the novel S4 `PEP`-object created in above sections. As an example, if we utilize the DREAM model trained on controlled clinical trials on the TYKS hospital registry patients, the OS prediction can be conducted using:
+
+```{r}
+
+# Create a DREAM-matching data input matrix from our xtest and the full data matrix
+xtemp <- conforminput(DREAM, xtest)
+# Predict survival for our hospital registry example dataset 
+dreampred <- predict(DREAM, 
+ 	# Providing full new data and average prediction over the ensemble members
+ 	newx=xtemp, type="ensemble",
+ 	# Defining that we don't want any further data matrix feature extraction
+ 	# The call to conforminput above already formatted the input data
+ 	x.expand = as.matrix
+)
+
+```
+
+
+Notice that we utilize the helper function `conforminput` for feature extraction/creation, as multiple interaction variables were introduced in the original DREAM data matrix and the dimensions would not match in the regression task otherwise.
+
+The following error message is quite commonly encountered when first using pre-built models to new data:
+
+> Error in newx %*% nbeta : 
+>  Cholmod error 'X and/or Y have wrong dimensions' 
+>  at file ../MatrixOps/cholmod_sdmult.c, line 90
+
+It is prompted by the `glmnet`-package's C/Fortran implementation, if the $\beta$ coefficients do not conform to the provided dimensions of the new data matrix $X$. For this purpose, the new data should have equal number of columns (variables) using data processing (functions such as `conforminput` or the S4-slot in a `PEP`-object called `x.expand`).
+
+```{r}
+# Test c-index between the DREAM ensemble prediction and TYKS true response
+dreamscore <- score.cindex(pred = dreampred, real = ytrue)
+print(paste("DREAM example c-index:", round(dreamscore, 4)))
+```
+
+# Session info
+
+```{r}
+sessionInfo()
+```

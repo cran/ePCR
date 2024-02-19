@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>User guide to the ePCR R-package</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">User guide to the ePCR R-package</h1>
+
+
+
+<div id="description-of-the-epcr-package" class="section level1">
+<h1>Description of the ePCR package</h1>
+<p><code>ePCR</code> is an R-package intended for the survival analysis of advanced prostate cancer. This document is a basic introduction to the functionality of <code>ePCR</code> and a general overview to the possible analysis workflows for clinical trial or hospital registry cohorts. The approach leverages ensemble-driven usage of single Cox regression based regression models named <em>ePCR</em>, which was the top performing approach in the DREAM 9.5 Prostate Cancer Challenge (Guinney et al, 2017).</p>
+<p>The latest version of <code>ePCR</code> is available in the Comprehensive R Archive Network <a href="https://cran.r-project.org/package=ePCR">CRAN</a>. CRAN mirrors are by default available in the installation of R, and the <code>ePCR</code> package is installable using the R terminal command: <code>install.packages(&quot;ePCR&quot;)</code>. This should prompt the user to select a nearby CRAN mirror, after which the installation of <code>ePCR</code> and its dependencies are automatically performed. After the <code>install.packages</code>-call, the <code>ePCR</code> package can be loaded with either command <code>library(&quot;ePCR&quot;)</code>.</p>
+<p>The following notation is used in the document: R commands, package names and function names are written in <code>typewriter font</code>. The notation of format <code>pckgName::funcName</code> indicates that the function <code>funcName</code> is called from the package <code>pckgName</code>, which is prominently used in the underlying R code due to package namespaces. This document as well as other useful PDFs can be inspected using the <code>browseVignettes</code> function for any package in R.</p>
+<div id="loading-the-example-clinical-cohorts-into-the-r-session" class="section level2">
+<h2>Loading the example clinical cohorts into the R session</h2>
+<p>The <code>ePCR</code>-package is provided with two example hospital registry datasets. These datasets represent confidential hospital registry cohorts, to which kernel density estimation was fitted. Illustrative virtual patients were then generated from the kernel estimates and are provided here in the example datasets. Please see the accompanying <code>ePCR</code> publication for further details on the two Turku University Hospital cohorts (Laajala et al., 2018), and the Synapse site for DREAM 9.5 PCC for accessing the original DREAM data (Guinney, Wang, Laajala et al. 2017). The exemplifying datasets can be loaded into an R session using:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(ePCR)</span></code></pre></div>
+<pre><code>## 
+## Attaching package: &#39;ePCR&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     plot</code></pre>
+<pre><code>## The following object is masked from &#39;package:base&#39;:
+## 
+##     plot</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="co"># Kernel density simulated patients from Turku University Hospital (TYKS)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="co"># Data consists of TEXT cohort (text-search found patients) </span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="co"># and MEDI (patients identified using medication and few keywords)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="kw">data</span>(TYKSSIMU)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="co"># The following data matrices x and survival responses y become available</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a><span class="kw">head</span>(xTEXTSIMU); <span class="kw">head</span>(yTEXTSIMU) </span></code></pre></div>
+<pre><code>##                BMI HEIGHTBL WEIGHTBL      ALP      ALT      AST    CA    CREAT
+## TEXTSIMU1 27.16556      172     83.0 4.852030 3.044522 3.401197 2.305 3.951244
+## TEXTSIMU2 27.16556      176     83.0 4.442651 3.258097 3.401197 2.310 4.644391
+## TEXTSIMU3 29.35235      168     91.2 4.304065 2.708050 3.401197 2.305 4.394449
+## TEXTSIMU4 24.80000      176     83.0 4.442651 2.944439 3.218876 2.330 4.465908
+## TEXTSIMU5 27.20000      176     83.0 5.129899 2.944439 3.401197 2.310 3.891820
+## TEXTSIMU6 27.16556      176     83.0 4.564348 1.609438 3.401197 2.305 4.204693
+##             HB      LDH      NEU PLT       PSA    TBILI      TESTO      WBC
+## TEXTSIMU1 11.3 5.265247 1.128171 323 3.4657359 2.197225 -0.1743534 2.001480
+## TEXTSIMU2 12.6 5.265247 1.329710 216 4.6051702 2.197225 -0.1743534 2.332144
+## TEXTSIMU3 13.5 5.265247 2.187174  83 3.8712010 2.197225 -0.1743534 1.856298
+## TEXTSIMU4 12.7 5.273000 2.551006 189 0.3364722 3.135494  0.3364722 2.186051
+## TEXTSIMU5 12.3 5.265247 1.329710 298 6.6720329 2.197225 -0.1743534 2.041220
+## TEXTSIMU6 15.4 5.265247 1.329710 237 3.6505739 2.197225 -0.1743534 1.435085
+##             CREACL NA.        MG      PHOS  ALB TPRO   RBC       LYM      BUN
+## TEXTSIMU1 3.549617 137 -0.210721 0.1397619 34.8   67 4.830 0.3364722 2.475973
+## TEXTSIMU2 3.549617 141 -0.210721 0.1397619 34.8   67 4.830 0.3364722 2.475973
+## TEXTSIMU3 3.549617 135 -0.210721 0.1397619 29.5   67 4.185 0.3364722 2.397895
+## TEXTSIMU4 3.549617 140 -0.210721 0.1397619 34.8   67 3.620 0.3364722 2.475973
+## TEXTSIMU5 3.549617 140 -0.210721 0.1397619 34.8   67 4.120 0.3364722 2.475973
+## TEXTSIMU6 3.549617 142 -0.210721 0.1397619 34.8   67 3.780 0.3364722 2.475973
+##               CCRC      GLU SYSTOLICBP DIASTOLICBP PULSE HEMAT SPEGRA LYMperLEU
+## TEXTSIMU1 3.703478 1.824549        136          76    72  0.43      0        24
+## TEXTSIMU2 3.703478 1.840550        142          64    72  0.45      0        22
+## TEXTSIMU3 3.703478 1.856298        111          76    72  0.38      0        22
+## TEXTSIMU4 3.703478 1.856298        128          76    72  0.38      0        22
+## TEXTSIMU5 3.703478 1.757858        142          76    69  0.38      0        22
+## TEXTSIMU6 3.703478 1.856298        151          76    72  0.38      0        22
+##           MONO MONOperLEU NEUperLEU POT BASOperLEU  EOS EOSperLEU TARGET
+## TEXTSIMU1 0.62          9        63 4.1          1 0.17         0      0
+## TEXTSIMU2 0.62          9        63 4.1          0 0.17         1      0
+## TEXTSIMU3 0.62          9        63 4.1          0 0.19         2      0
+## TEXTSIMU4 0.62          9        63 4.9          0 0.17         2      0
+## TEXTSIMU5 0.62          9        63 3.7          0 0.17         2      0
+## TEXTSIMU6 0.62          9        63 3.7          0 0.17         2      0
+##           LYMPH_NODES KIDNEYS LUNGS LIVER PLEURA OTHER PROSTATE ORCHIDECTOMY
+## TEXTSIMU1           0       0     0     0      0     0        0            1
+## TEXTSIMU2           0       0     0     0      0     0        0            0
+## TEXTSIMU3           0       0     0     0      0     0        0            0
+## TEXTSIMU4           0       0     0     0      0     1        0            0
+## TEXTSIMU5           0       0     0     1      0     0        0            0
+## TEXTSIMU6           1       0     0     0      0     1        0            0
+##           PROSTATECTOMY LYMPHADENECTOMY BILATERAL_ORCHIDECTOMY
+## TEXTSIMU1             1               0                      1
+## TEXTSIMU2             0               0                      0
+## TEXTSIMU3             0               0                      0
+## TEXTSIMU4             0               0                      0
+## TEXTSIMU5             0               0                      0
+## TEXTSIMU6             0               0                      0
+##           PRIOR_RADIOTHERAPY ANALGESICS ANTI_ANDROGENS GLUCOCORTICOID
+## TEXTSIMU1                  1          0              0              0
+## TEXTSIMU2                  1          1              0              1
+## TEXTSIMU3                  1          0              0              0
+## TEXTSIMU4                  0          0              0              0
+## TEXTSIMU5                  0          0              0              1
+## TEXTSIMU6                  1          0              0              0
+##           GONADOTROPIN BISPHOSPHONATE CORTICOSTEROID IMIDAZOLE ACE_INHIBITORS
+## TEXTSIMU1            0              0              0         0              0
+## TEXTSIMU2            0              0              0         0              0
+## TEXTSIMU3            0              0              0         0              0
+## TEXTSIMU4            0              0              0         0              0
+## TEXTSIMU5            0              0              0         0              0
+## TEXTSIMU6            0              0              0         0              0
+##           BETA_BLOCKING HMG_COA_REDUCT ESTROGENS ANTI_ESTROGENS CEREBACC CHF
+## TEXTSIMU1             0              0         0              0        0   0
+## TEXTSIMU2             0              0         0              0        0   0
+## TEXTSIMU3             0              0         0              0        0   0
+## TEXTSIMU4             0              0         0              0        0   1
+## TEXTSIMU5             0              0         0              0        0   0
+## TEXTSIMU6             0              0         0              0        0   0
+##           DVT DIAB MI PULMEMB SPINCOMP COPD MHBLOOD MHCARD MHCONGEN MHEAR
+## TEXTSIMU1   0    0  0       0        0    0       0      1        0     0
+## TEXTSIMU2   0    0  0       0        0    0       0      0        0     0
+## TEXTSIMU3   0    0  0       0        0    0       0      0        0     0
+## TEXTSIMU4   0    1  0       0        0    0       0      0        0     0
+## TEXTSIMU5   0    0  0       0        0    0       0      0        0     0
+## TEXTSIMU6   0    0  0       0        0    0       0      0        0     1
+##           MHENDO MHGASTRO MHHEPATO MHIMMUNE MHINFECT MHINJURY MHINVEST MHMETAB
+## TEXTSIMU1      0        0        0        0        0        1        0       0
+## TEXTSIMU2      0        1        0        0        0        0        0       0
+## TEXTSIMU3      1        1        0        0        1        0        0       0
+## TEXTSIMU4      0        1        0        0        0        0        0       0
+## TEXTSIMU5      0        0        0        0        0        0        0       0
+## TEXTSIMU6      0        0        0        0        0        0        0       0
+##           MHPSYCH MHRENAL MHRESP MHSKIN MHVASC ECOG_C AGEGRP2 RaceAsian
+## TEXTSIMU1       0       0      0      0      0      0       2         0
+## TEXTSIMU2       0       0      0      0      1      0       0         0
+## TEXTSIMU3       0       0      0      0      0      0       1         0
+## TEXTSIMU4       0       0      0      0      0      0       1         0
+## TEXTSIMU5       0       0      0      0      0      0       1         0
+## TEXTSIMU6       0       0      0      0      0      0       2         0
+##           RaceBlack RaceOther RaceWhite RegionAsia RegionEastEuro
+## TEXTSIMU1         0         0         0          0              0
+## TEXTSIMU2         0         0         0          0              0
+## TEXTSIMU3         0         0         0          0              0
+## TEXTSIMU4         0         0         0          0              0
+## TEXTSIMU5         0         0         0          0              0
+## TEXTSIMU6         0         0         0          0              0
+##           RegionNorthAmer RegionSouthAmer RegionWestEuro
+## TEXTSIMU1               0               0              0
+## TEXTSIMU2               0               0              0
+## TEXTSIMU3               0               0              0
+## TEXTSIMU4               0               0              0
+## TEXTSIMU5               0               0              0
+## TEXTSIMU6               0               0              0</code></pre>
+<pre><code>##           DEATH LKADT_P  surv
+## TEXTSIMU1     1     342   342
+## TEXTSIMU2     0     360  360+
+## TEXTSIMU3     1     682   682
+## TEXTSIMU4     0    1067 1067+
+## TEXTSIMU5     1     113   113
+## TEXTSIMU6     0    1246 1246+</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">head</span>(xMEDISIMU); <span class="kw">head</span>(yMEDISIMU)</span></code></pre></div>
+<pre><code>##                BMI HEIGHTBL WEIGHTBL      ALP      ALT      AST   CA    CREAT
+## MEDISIMU1 28.04282      175       90 5.093750 2.708050 3.349750 1.99 4.488636
+## MEDISIMU2 26.57313      176       60 5.017280 3.091042 3.258097 2.41 4.174387
+## MEDISIMU3 28.39506      165       65 4.418841 3.332205 3.349750 2.41 4.077537
+## MEDISIMU4 24.57787      176      107 5.003946 3.295837 3.349750 2.33 4.634729
+## MEDISIMU5 30.58581      188       73 4.158883 2.484907 3.367296 2.34 4.234107
+## MEDISIMU6 25.18079      174       86 4.564348 4.882802 3.349750 2.33 4.499810
+##             HB      LDH       NEU PLT      PSA    TBILI       TESTO      WBC
+## MEDISIMU1 10.9 5.327876 1.2149127 186 6.194405 1.386294 -0.08338161 1.609438
+## MEDISIMU2 13.3 5.327876 0.7030975 156 2.163323 1.609438 -0.08338161 2.041220
+## MEDISIMU3 11.8 5.327876 1.0952734 126 3.713572 1.609438 -0.99425227 1.871802
+## MEDISIMU4 13.1 5.327876 0.4946962 217 3.555348 1.791759 -0.08338161 1.568616
+## MEDISIMU5 15.3 5.327876 1.1939225 221 3.367296 2.079442  0.78845736 1.704748
+## MEDISIMU6 12.8 5.327876 1.9892433 386 3.610918 1.791759 -1.56064775 1.824549
+##           CREACL NA.         MG        PHOS   ALB TPRO  RBC        LYM      BUN
+## MEDISIMU1      0 140 -0.1923903  0.09531018 36.65 68.5 3.91  0.1823216 1.722767
+## MEDISIMU2      0 142 -0.1923903 -0.02020271 33.60 68.5 4.28  0.8878913 1.722767
+## MEDISIMU3      0 144 -0.1923903 -0.02020271 36.65 68.5 4.62  0.4946962 1.722767
+## MEDISIMU4      0 142 -0.1923903 -0.02020271 36.65 69.0 4.35 -0.2744368 1.722767
+## MEDISIMU5      0 143 -0.1923903 -0.06187540 36.65 68.5 4.05  0.4946962 1.722767
+## MEDISIMU6      0 137 -0.1923903 -0.02020271 36.65 68.5 4.78  0.5128236 1.722767
+##               CCRC      GLU SYSTOLICBP DIASTOLICBP PULSE HEMAT SPEGRA LYMperLEU
+## MEDISIMU1 3.800105 1.435085      141.5          77    68  0.37      0        29
+## MEDISIMU2 3.746038 1.871802      107.0          77    58  0.34      0        29
+## MEDISIMU3 3.800105 1.916923      141.5          77    71  0.43      0        29
+## MEDISIMU4 3.800105 1.871802      126.0          90    71  0.40      0        29
+## MEDISIMU5 3.800105 1.589235      141.5          77    71  0.35      0        28
+## MEDISIMU6 3.800105 1.791759      188.0          77    88  0.38      0        29
+##           MONO MONOperLEU NEUperLEU POT BASOperLEU  EOS EOSperLEU TARGET
+## MEDISIMU1 0.60         11      56.5 4.4          0 0.17         3      0
+## MEDISIMU2 0.60         11      56.5 4.5          1 0.17         3      0
+## MEDISIMU3 0.60         11      56.5 3.7          0 0.17         7      0
+## MEDISIMU4 0.88         11      56.5 4.1          0 0.17         3      0
+## MEDISIMU5 0.60         11      56.5 4.6          0 0.17         3      0
+## MEDISIMU6 0.60         11      56.5 4.0          0 0.17         3      0
+##           LYMPH_NODES KIDNEYS LUNGS LIVER PLEURA OTHER PROSTATE ORCHIDECTOMY
+## MEDISIMU1           0       0     0     0      0     1        0            0
+## MEDISIMU2           0       0     0     0      0     0        0            0
+## MEDISIMU3           0       0     0     0      0     0        0            0
+## MEDISIMU4           1       0     0     0      0     0        0            1
+## MEDISIMU5           0       0     0     0      0     1        0            0
+## MEDISIMU6           0       0     0     0      0     0        0            0
+##           PROSTATECTOMY LYMPHADENECTOMY BILATERAL_ORCHIDECTOMY
+## MEDISIMU1             0               0                      0
+## MEDISIMU2             0               0                      0
+## MEDISIMU3             1               0                      0
+## MEDISIMU4             0               0                      0
+## MEDISIMU5             0               0                      0
+## MEDISIMU6             0               0                      0
+##           PRIOR_RADIOTHERAPY ANALGESICS ANTI_ANDROGENS GLUCOCORTICOID
+## MEDISIMU1                  1          0              0              0
+## MEDISIMU2                  1          1              0              0
+## MEDISIMU3                  1          0              1              1
+## MEDISIMU4                  0          1              1              1
+## MEDISIMU5                  1          0              1              1
+## MEDISIMU6                  1          0              1              1
+##           GONADOTROPIN BISPHOSPHONATE CORTICOSTEROID IMIDAZOLE ACE_INHIBITORS
+## MEDISIMU1            0              1              1         0              0
+## MEDISIMU2            0              0              1         0              0
+## MEDISIMU3            0              0              1         0              0
+## MEDISIMU4            0              0              1         0              0
+## MEDISIMU5            0              0              0         0              0
+## MEDISIMU6            0              0              1         0              0
+##           BETA_BLOCKING HMG_COA_REDUCT ESTROGENS ANTI_ESTROGENS CEREBACC CHF
+## MEDISIMU1             0              1         0              0        0   0
+## MEDISIMU2             0              0         0              0        0   0
+## MEDISIMU3             1              0         0              0        0   0
+## MEDISIMU4             0              0         0              0        0   0
+## MEDISIMU5             0              0         0              0        0   0
+## MEDISIMU6             1              0         0              0        0   0
+##           DVT DIAB MI PULMEMB SPINCOMP COPD MHBLOOD MHCARD MHCONGEN MHEAR
+## MEDISIMU1   0    0  0       0        0    0       0      1        0     0
+## MEDISIMU2   0    0  0       0        0    0       0      1        0     1
+## MEDISIMU3   1    0  0       0        0    0       0      1        0     1
+## MEDISIMU4   0    1  0       0        0    0       0      0        0     0
+## MEDISIMU5   0    0  0       0        0    0       0      0        0     0
+## MEDISIMU6   0    1  0       0        0    0       0      0        0     0
+##           MHENDO MHGASTRO MHHEPATO MHIMMUNE MHINFECT MHINJURY MHINVEST MHMETAB
+## MEDISIMU1      0        1        0        0        1        0        0       0
+## MEDISIMU2      0        0        0        0        0        1        0       1
+## MEDISIMU3      0        0        0        0        0        0        0       0
+## MEDISIMU4      0        0        0        0        0        0        0       1
+## MEDISIMU5      0        0        0        0        0        0        0       0
+## MEDISIMU6      0        0        0        0        0        0        0       0
+##           MHPSYCH MHRENAL MHRESP MHSKIN MHVASC ECOG_C AGEGRP2 RaceAsian
+## MEDISIMU1       0       0      0      0      0      0       2         0
+## MEDISIMU2       0       0      0      0      0      0       1         0
+## MEDISIMU3       0       0      0      0      0      0       2         0
+## MEDISIMU4       0       0      0      1      0      0       2         0
+## MEDISIMU5       0       1      0      0      0      0       0         0
+## MEDISIMU6       0       0      0      0      0      0       2         0
+##           RaceBlack RaceOther RaceWhite RegionAsia RegionEastEuro
+## MEDISIMU1         0         0         0          0              0
+## MEDISIMU2         0         0         0          0              0
+## MEDISIMU3         0         0         0          0              0
+## MEDISIMU4         0         0         0          0              0
+## MEDISIMU5         0         0         0          0              0
+## MEDISIMU6         0         0         0          0              0
+##           RegionNorthAmer RegionSouthAmer RegionWestEuro
+## MEDISIMU1               0               0              0
+## MEDISIMU2               0               0              0
+## MEDISIMU3               0               0              0
+## MEDISIMU4               0               0              0
+## MEDISIMU5               0               0              0
+## MEDISIMU6               0               0              0</code></pre>
+<pre><code>##           DEATH LKADT_P  surv
+## MEDISIMU1     0      89   89+
+## MEDISIMU2     1     754   754
+## MEDISIMU3     1     783   783
+## MEDISIMU4     0     159  159+
+## MEDISIMU5     0    1322 1322+
+## MEDISIMU6     1     200   200</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">library</span>(survival)</span></code></pre></div>
+<p>It is important to disginguish between the <code>PSP</code> and <code>PEP</code> objects, which represent a single penalized Cox regression model and an ensemble of Cox regression models, respectively. <code>PSP</code> objects are penalized/regularized Cox regression models fitted to a particular dataset by exploring its <span class="math inline">\(\{\lambda, \alpha\}\)</span> parameter space. Notice that the sequence of <span class="math inline">\(\lambda\)</span> is dependent on the <span class="math inline">\(\alpha \in [0,1]\)</span>. The regularized/penalized fitting procedure in <code>ePCR</code> is provided by the <code>glmnet</code>-package (Simon et al., 2011), although custom cross-validation and other supporting functionality is provided independently.</p>
+<p>After fitting suitable candidate <code>PSP</code>-objects (Penalized Single Predictors), these will be aggregated to the ensemble structure <code>PEP</code> (Penalized Ensemble Predictor). The key input to <code>PEP</code>-constructor are the <code>PSP</code> intended for the use of the ensemble. We will start off by introducing the fine-tuning and fitting of <code>PSP</code>s. For this purpose the generic S4-class contructor <code>new</code> will be called with the main parameter indicating that we wish to construct a <code>PSP</code>-object.</p>
+</div>
+<div id="psp-objects" class="section level2">
+<h2>PSP-objects</h2>
+<p>The key attributes provided for the PSP-constructor are the following parameters (see <code>?&#39;PSP-class&#39;</code> in R for further documentation):</p>
+<ul>
+<li><code>x</code>: The input data matrix where rows corresponding to patients and columns to potential predictors.</li>
+<li><code>y</code>: The <code>Surv</code>-class response vector as required by Cox regression and <code>glmnet</code> in survival prediction.</li>
+<li><code>seeds</code>: An integer vector or a single value for setting the random seed for cross-validation. Notice that this is highly suggested for reproducibility. If a multiple seed integers are provided, the cross-validation will be conducted separately for each. This will smoothen the cross-validation surface, but will take multiply the computational time required to fit a model.</li>
+<li><code>score</code>: The scoring function utilized in evaluating the generalization ability of the fitted model in cross-validation; readily implemented scoring functions include <code>score.iAUC</code> and <code>score.cindex</code>, but custom scoring functions are also allowed.</li>
+<li><code>alphaseq</code>: Sequence of alpha values. The extreme ends <span class="math inline">\(\alpha = 1\)</span> is LASSO regression and <span class="math inline">\(\alpha = 0\)</span> is Ridge Regression. <span class="math inline">\(\alpha \in ]0,1[\)</span> is generally referred to as Elastic Net. Notice that LASSO and Ridge Regression have noticeably different characteristics as they utilizeo only the <span class="math inline">\(L_1\)</span> and <span class="math inline">\(L_2\)</span> norms, respectively; for example, a Ridge Regression model will never have its coefficients exactly zero. Furthermore, for co-linear predictors LASSO tends to pick a single one, while Ridge Regression picks multiple ones and spreads the overall effect over these predictors. Depending on the ultimate prediction purpose, one may prefer one or the other and can tailor <code>alphaseq</code> to suit their needs. By default we suggest utilizing an evenly spaced <code>alphaseq</code> over <span class="math inline">\([0,1]\)</span> at least for preliminary search.</li>
+<li><code>nlambda</code>: Number of <span class="math inline">\(\lambda\)</span> tested as a function of the corresponding <span class="math inline">\(\alpha\)</span>. By default <code>glmnet</code> suggests 100 values which are picked from a feasible range between model including all coefficients and converged model where no further penalization is possible.</li>
+<li><code>folds</code>: Number of folds in the cross-validation (minimum 3, maximum n obs = LOO-CV).</li>
+</ul>
+<p>For the sake of the example, we will construct an <code>ePCR</code> model ensemble that consists of two <code>PSP</code>-objects; one from the medication curated cohort and other from the text search cohort. We will leave out a small portion of medication and text search patients for a small test set, to later evaluate the generalization ability of the ensemble. Notice however that this is not a proper evaluation as the patients are not from an independent source, and therefore give an optimistic view to the generalization capability of the model(s).</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>testset &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">30</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a><span class="co"># Medication cohort fit</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a><span class="co"># Leaving out patients into a separate test set using negative indices</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>psp_medi &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;PSP&quot;</span>, </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>    <span class="co"># Input data matrix x (example data loaded previously)</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a>    <span class="dt">x =</span> xMEDISIMU[<span class="op">-</span>testset,],</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true"></a>    <span class="co"># Response vector, &#39;surv&#39;-object</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true"></a>    <span class="dt">y =</span> yMEDISIMU[<span class="op">-</span>testset,<span class="st">&quot;surv&quot;</span>],</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true"></a>    <span class="co"># Seeds for reproducibility</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true"></a>    <span class="dt">seeds =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>),</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true"></a>    <span class="co"># If user wishes to run the CV binning multiple times,</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true"></a>    <span class="co"># this is possible by averaging over them for smoother CV heatmap.</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true"></a>    <span class="dt">cvrepeat =</span> <span class="dv">2</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true"></a>    <span class="co"># Using the concordance-index as prediction accuracy in CV</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true"></a>    <span class="dt">score =</span> score.cindex,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true"></a>    <span class="co"># Alpha sequence</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true"></a>    <span class="dt">alphaseq =</span> <span class="kw">seq</span>(<span class="dt">from=</span><span class="dv">0</span>, <span class="dt">to=</span><span class="dv">1</span>, <span class="dt">length.out=</span><span class="dv">6</span>),</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true"></a>    <span class="co"># Using glmnet&#39;s default nlambda of 100</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true"></a>    <span class="dt">nlambda =</span> <span class="dv">100</span>,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true"></a>    <span class="co"># Running the nominal 10-fold cross-validation</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true"></a>    <span class="dt">folds =</span> <span class="dv">10</span>,</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true"></a>    <span class="co"># x.expand slot is a function that would allow interaction terms</span></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true"></a>    <span class="co"># For the sake of the simplicity we will consider identity function</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true"></a>    <span class="dt">x.expand =</span> <span class="cf">function</span>(x) { <span class="kw">as.matrix</span>(x) }</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true"></a>)</span></code></pre></div>
+<pre><code>## --- Initializing new PSP object ---
+## 
+## --- Cross-validation ( 10 -folds) repeat run  1  of  2  ---
+## 
+## [1] &quot;alpha 0&quot;
+## [1] &quot;alpha 0.2&quot;
+## [1] &quot;alpha 0.4&quot;
+## [1] &quot;alpha 0.6&quot;
+## [1] &quot;alpha 0.8&quot;
+## [1] &quot;alpha 1&quot;
+## --- Cross-validation ( 10 -folds) repeat run  2  of  2  ---
+## 
+## [1] &quot;alpha 0&quot;
+## [1] &quot;alpha 0.2&quot;
+## [1] &quot;alpha 0.4&quot;
+## [1] &quot;alpha 0.6&quot;
+## [1] &quot;alpha 0.8&quot;
+## [1] &quot;alpha 1&quot;
+## --- Computing AUCs for regularization curves for coefficients --- 
+## 
+## --- Generating feature list and dictionary --- 
+## 
+## --- New PSP object successfully created ---</code></pre>
+<p>The parameters for the second <code>PSP</code> are similar to the one above. Notice that with the <code>PSP</code>-members, user can tailor multiple parameters to best suit the data.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="co"># Text run similar to above</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a><span class="co"># Leaving out patients into a separate test set using negative indices</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>psp_text &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;PSP&quot;</span>, </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>    <span class="dt">x =</span> xTEXTSIMU[<span class="op">-</span>testset,],</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true"></a>    <span class="dt">y =</span> yTEXTSIMU[<span class="op">-</span>testset,<span class="st">&quot;surv&quot;</span>],</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true"></a>    <span class="dt">seeds =</span> <span class="kw">c</span>(<span class="dv">3</span>,<span class="dv">4</span>),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true"></a>    <span class="dt">cvrepeat =</span> <span class="dv">2</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true"></a>    <span class="dt">score =</span> score.cindex,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true"></a>    <span class="dt">alphaseq =</span> <span class="kw">seq</span>(<span class="dt">from=</span><span class="dv">0</span>, <span class="dt">to=</span><span class="dv">1</span>, <span class="dt">length.out=</span><span class="dv">6</span>),</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true"></a>    <span class="dt">nlambda =</span> <span class="dv">100</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true"></a>    <span class="dt">folds =</span> <span class="dv">10</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true"></a>    <span class="dt">x.expand =</span> <span class="cf">function</span>(x) { <span class="kw">as.matrix</span>(x) }</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true"></a>)</span></code></pre></div>
+<pre><code>## --- Initializing new PSP object ---
+## 
+## --- Cross-validation ( 10 -folds) repeat run  1  of  2  ---
+## 
+## [1] &quot;alpha 0&quot;
+## [1] &quot;alpha 0.2&quot;
+## [1] &quot;alpha 0.4&quot;
+## [1] &quot;alpha 0.6&quot;
+## [1] &quot;alpha 0.8&quot;
+## [1] &quot;alpha 1&quot;
+## --- Cross-validation ( 10 -folds) repeat run  2  of  2  ---
+## 
+## [1] &quot;alpha 0&quot;
+## [1] &quot;alpha 0.2&quot;
+## [1] &quot;alpha 0.4&quot;
+## [1] &quot;alpha 0.6&quot;
+## [1] &quot;alpha 0.8&quot;
+## [1] &quot;alpha 1&quot;
+## --- Computing AUCs for regularization curves for coefficients --- 
+## 
+## --- Generating feature list and dictionary --- 
+## 
+## --- New PSP object successfully created ---</code></pre>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="co"># Taking a look on the show-method for PSP:</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>psp_medi</span></code></pre></div>
+<pre><code>## PSP ePCR object
+## N observations:  120 
+## Optimal alpha:  1 
+## Optimal lambda:  0.2578574 
+## Optimal lambda index:  1</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="co"># Plot the CV-surface of the fitted PSP:</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a><span class="kw">plot</span>(psp_medi, </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>    <span class="co"># Showing only every 10th row and column name (propagated to heatcv-function)</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a>    <span class="dt">by.rownames=</span><span class="dv">10</span>, <span class="dt">by.colnames=</span><span class="dv">10</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>    <span class="co"># Adjust main title and tilt the bias of the color key legend (see ?heatcv)</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a>    <span class="dt">main=</span><span class="st">&quot;C-index CV for psp_medi&quot;</span>, <span class="dt">bias=</span><span class="fl">0.2</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>Noticeably, the cross-validation surface suggests different optimized penalization parameters for the two ensemble members. This most likely stems from systematic differences in the two cohorts, to which end the <code>ePCR</code> methodology offers an ensemble-driven alternative to account for differences between patient substrata.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="kw">plot</span>(psp_text, </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a>    <span class="co"># Showing only every 10th row and column name (propagated to heatcv-function)</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a>    <span class="dt">by.rownames=</span><span class="dv">10</span>, <span class="dt">by.colnames=</span><span class="dv">10</span>, </span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>    <span class="co"># Adjust main title and tilt the bias of the color key legend (see ?heatcv)</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true"></a>    <span class="dt">main=</span><span class="st">&quot;C-index CV for psp_text&quot;</span>, <span class="dt">bias=</span><span class="fl">0.2</span>)   </span></code></pre></div>
+<p><img src="data:image/png;base64,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ClC1ohnUZwYFqGSZ/+sbrkEBqlf2Lj68T+IuHqBSdTwH9XkOClCpur/V+TpAAaoT34sHqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHRlB3rYYYcdffTRa9asWbt27cknn7x+/foNGzacd955F154oQF6xRVXRD+O+4Ybbrj11ltvv/32TZs2GaMGaKLTaTLkIoUG5datWx977LHkYzfTCGjitPuHcvdU04vzCjTsQzZIAAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah0AAWodAAFqHQABah05QF6Xf9+o6ji5b9pSz5Plpjem+3666+/wXbjjTfeFHdzYb8Vd8stt7wvbuPGjbcl3R53xx133HnnnebPye/EuZ8QnvyQ8Hvdb/fbHohLvsxRNx+TseyrXcM+ZIMEUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgA6c73kTcytx7PoEUIAOmm90+qstFKAAHbD27Iz5WJ9ekaPXM4ACdMCalZr52JicX5HD1yuAAnTAmtvCs7sP0P0MoCsM1F1+rvZFKEABOmAAPbAAyileOoBykyQdQHnMJB1AVxgoD+oPLICuNNCgwbc6DyCArjjQYQRQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKB1CASgdQgEoHUIBKVx6gVMoAStIBlKQDKEkHUJIOoCQdQEk6gJJ0ACXpAErSAZSkAyhJB1CSDqAkHUBJOoCSdAAl6QBK0gGUpAMoSQdQkg6gJB1ASTqAknQAJekAStIBlKQDKEkHUJIOoCQdQEm6MQDaqnpJk/OrOqy77ZFpDIAG7dm+R2glh3W3PSqNA1Bz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" style="display: block; margin: auto;" /></p>
+<p>In addition to providing the CV-grid, the identified optimal parameters are available for downstream analyses:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a>psp_medi<span class="op">@</span>optimum</span></code></pre></div>
+<pre><code>##       Alpha  AlphaIndex      Lambda LambdaIndex 
+##   1.0000000   6.0000000   0.2578574   1.0000000</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a>psp_text<span class="op">@</span>optimum</span></code></pre></div>
+<pre><code>##       Alpha  AlphaIndex      Lambda LambdaIndex 
+##   1.0000000   6.0000000   0.4396716   1.0000000</code></pre>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true"></a><span class="kw">slotNames</span>(psp_medi)</span></code></pre></div>
+<pre><code>##  [1] &quot;description&quot; &quot;features&quot;    &quot;strata&quot;      &quot;alphaseq&quot;    &quot;cvfolds&quot;    
+##  [6] &quot;nlambda&quot;     &quot;cvmean&quot;      &quot;cvmedian&quot;    &quot;cvstdev&quot;     &quot;cvmin&quot;      
+## [11] &quot;cvmax&quot;       &quot;score&quot;       &quot;cvrepeat&quot;    &quot;impute&quot;      &quot;optimum&quot;    
+## [16] &quot;seed&quot;        &quot;x&quot;           &quot;x.expand&quot;    &quot;y&quot;           &quot;fit&quot;        
+## [21] &quot;criterion&quot;   &quot;dictionary&quot;  &quot;regAUC&quot;</code></pre>
+</div>
+<div id="pep-objects" class="section level2">
+<h2>PEP-objects</h2>
+<p>Once the <code>PSP</code>-objects have been constructed, they are aggregated to the corresponding Penalized Ensemble Predictor (PEP). The <code>PEP</code> objects aggregate <code>PSP</code> objects from various data slices or optimization criteria, and create an ensemble predictor that averages over the provided single predictors. As such, its most important input is the list of desired <code>PSP</code>-objects:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true"></a>pep_tyks &lt;-<span class="st"> </span><span class="kw">new</span>(<span class="st">&quot;PEP&quot;</span>,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true"></a>    <span class="co"># The main input is the list of PSP objects</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true"></a>    <span class="dt">PSPs =</span> <span class="kw">list</span>(psp_medi, psp_text)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true"></a>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true"></a><span class="co"># These PSPs were constructed using the example code above.</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true"></a>pep_tyks</span></code></pre></div>
+<pre><code>## Penalized Ensemble Predictor
+## Count of PSPs:  2</code></pre>
+</div>
+<div id="predictions-based-on-peppsp-objects" class="section level2">
+<h2>Predictions based on PEP/PSP-objects</h2>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true"></a><span class="co"># Conduct naive test set evaluation</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true"></a>xtest &lt;-<span class="st"> </span><span class="kw">rbind</span>(xMEDISIMU[testset,], xTEXTSIMU[testset,])</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true"></a>ytest &lt;-<span class="st"> </span><span class="kw">rbind</span>(yMEDISIMU[testset,], yTEXTSIMU[testset,])</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true"></a><span class="co"># Perform survival prediction based on the PEP-ensemble we&#39;ve created</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true"></a>xpred &lt;-<span class="st"> </span><span class="kw">predict</span>(pep_tyks, <span class="dt">newx=</span><span class="kw">as.matrix</span>(xtest), <span class="dt">type=</span><span class="st">&quot;ensemble&quot;</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true"></a><span class="co"># Construct a survival object using the Surv-class</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true"></a>ytrue &lt;-<span class="st"> </span><span class="kw">Surv</span>(<span class="dt">time =</span> ytest[,<span class="st">&quot;surv&quot;</span>][,<span class="st">&quot;time&quot;</span>], <span class="dt">event =</span> ytest[,<span class="st">&quot;surv&quot;</span>][,<span class="st">&quot;status&quot;</span>])</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true"></a><span class="co"># Test c-index between our constructed ensemble prediction and true response</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true"></a>tyksscore &lt;-<span class="st"> </span><span class="kw">score.cindex</span>(<span class="dt">pred =</span> xpred, <span class="dt">real =</span> ytrue)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;TYKS example c-index:&quot;</span>, <span class="kw">round</span>(tyksscore, <span class="dv">4</span>)))</span></code></pre></div>
+<pre><code>## [1] &quot;TYKS example c-index: 0.5&quot;</code></pre>
+</div>
+</div>
+<div id="using-the-provided-dream-and-tyks-epcr-models" class="section level1">
+<h1>Using the provided DREAM and TYKS ePCR-models</h1>
+<p>The <code>ePCR</code> R-package comes with readily fitted <code>ePCR</code>-ensembles from the work by (Guinney, Wang, Laajala et al. 2017) as well as from hospital registry cohorts. Due to data confidentiality issues, the original data matrices or responses are not provided in the S4-objects (although normally they would be in the slots <code>@x</code> and <code>@y</code>, respectively).</p>
+<p>In order to gain access to the original data by Guinney et al., the processed data can be accessed as raw <code>.csv</code> files or R workspaces at the corresponding <a href="https://www.synapse.org//#!Synapse:syn4227610/files/">Synapse workspace</a>.</p>
+<p>Accessing the Turku University Hospital registry cohort requires a research permit and users are encouraged to contact the Center for Clinical Informatics (<a href="mailto:Arho.Virkki@tyks.fi" class="email">Arho.Virkki@tyks.fi</a>) for further information.</p>
+<p>Despite not providing the original data matrices, the ensemble model fits and their coefficients as a function of <span class="math inline">\(\{\lambda, \alpha\}\)</span> are fully functional. They are therefore suitable for conducting predictions for future patients or for studying effect within the estimated models/ensembles. These model objects can be loaded in <code>ePCR</code> using:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true"></a><span class="kw">data</span>(ePCRmodels)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true"></a><span class="kw">class</span>(DREAM)</span></code></pre></div>
+<pre><code>## [1] &quot;PEP&quot;
+## attr(,&quot;package&quot;)
+## [1] &quot;.GlobalEnv&quot;</code></pre>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true"></a><span class="kw">class</span>(TYKS)</span></code></pre></div>
+<pre><code>## [1] &quot;PEP&quot;
+## attr(,&quot;package&quot;)
+## [1] &quot;ePCR&quot;</code></pre>
+<p>The <code>DREAM</code> S4-object is the top-performing mCRPC OS-predicting ensemble from Guinney et al., while the TYKS models are fitted to the original Turku University Hospital cohorts. These model objects can be used for prediction similarly to the novel S4 <code>PEP</code>-object created in above sections. As an example, if we utilize the DREAM model trained on controlled clinical trials on the TYKS hospital registry patients, the OS prediction can be conducted using:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true"></a><span class="co"># Create a DREAM-matching data input matrix from our xtest and the full data matrix</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true"></a>xtemp &lt;-<span class="st"> </span><span class="kw">conforminput</span>(DREAM, xtest)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true"></a><span class="co"># Predict survival for our hospital registry example dataset </span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true"></a>dreampred &lt;-<span class="st"> </span><span class="kw">predict</span>(DREAM, </span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true"></a>    <span class="co"># Providing full new data and average prediction over the ensemble members</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true"></a>    <span class="dt">newx=</span>xtemp, <span class="dt">type=</span><span class="st">&quot;ensemble&quot;</span>,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true"></a>    <span class="co"># Defining that we don&#39;t want any further data matrix feature extraction</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true"></a>    <span class="co"># The call to conforminput above already formatted the input data</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true"></a>    <span class="dt">x.expand =</span> as.matrix</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true"></a>)</span></code></pre></div>
+<p>Notice that we utilize the helper function <code>conforminput</code> for feature extraction/creation, as multiple interaction variables were introduced in the original DREAM data matrix and the dimensions would not match in the regression task otherwise.</p>
+<p>The following error message is quite commonly encountered when first using pre-built models to new data:</p>
+<blockquote>
+<p>Error in newx %*% nbeta : Cholmod error ‘X and/or Y have wrong dimensions’ at file ../MatrixOps/cholmod_sdmult.c, line 90</p>
+</blockquote>
+<p>It is prompted by the <code>glmnet</code>-package’s C/Fortran implementation, if the <span class="math inline">\(\beta\)</span> coefficients do not conform to the provided dimensions of the new data matrix <span class="math inline">\(X\)</span>. For this purpose, the new data should have equal number of columns (variables) using data processing (functions such as <code>conforminput</code> or the S4-slot in a <code>PEP</code>-object called <code>x.expand</code>).</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true"></a><span class="co"># Test c-index between the DREAM ensemble prediction and TYKS true response</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true"></a>dreamscore &lt;-<span class="st"> </span><span class="kw">score.cindex</span>(<span class="dt">pred =</span> dreampred, <span class="dt">real =</span> ytrue)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true"></a><span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">&quot;DREAM example c-index:&quot;</span>, <span class="kw">round</span>(dreamscore, <span class="dv">4</span>)))</span></code></pre></div>
+<pre><code>## [1] &quot;DREAM example c-index: 0.389&quot;</code></pre>
+</div>
+<div id="session-info" class="section level1">
+<h1>Session info</h1>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true"></a><span class="kw">sessionInfo</span>()</span></code></pre></div>
+<pre><code>## R Under development (unstable) (2023-09-30 r85239 ucrt)
+## Platform: x86_64-w64-mingw32/x64
+## Running under: Windows 10 x64 (build 19045)
+## 
+## Matrix products: default
+## 
+## 
+## locale:
+## [1] LC_COLLATE=C                     LC_CTYPE=English_Finland.utf8   
+## [3] LC_MONETARY=English_Finland.utf8 LC_NUMERIC=C                    
+## [5] LC_TIME=English_Finland.utf8    
+## 
+## time zone: Europe/Helsinki
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] survival_3.5-7 ePCR_0.11.0   
+## 
+## loaded via a namespace (and not attached):
+##  [1] Matrix_1.6-1.1      glmnet_4.1-8        future.apply_1.11.0
+##  [4] jsonlite_1.8.7      compiler_4.4.0      Rcpp_1.0.11        
+##  [7] parallel_4.4.0      jquerylib_0.1.4     globals_0.16.2     
+## [10] splines_4.4.0       yaml_2.3.7          fastmap_1.1.1      
+## [13] lattice_0.21-8      prodlim_2023.03.31  impute_1.75.1      
+## [16] Bolstad2_1.0-29     R6_2.5.1            shape_1.4.6        
+## [19] knitr_1.44          iterators_1.0.14    pec_2023.04.12     
+## [22] future_1.33.0       bslib_0.5.0         rlang_1.1.1        
+## [25] cachem_1.0.8        xfun_0.39           sass_0.4.7         
+## [28] cli_3.6.1           hamlet_0.9.6        digest_0.6.33      
+## [31] foreach_1.5.2       grid_4.4.0          mvtnorm_1.2-2      
+## [34] lava_1.7.2.1        timereg_2.0.5       timeROC_0.4        
+## [37] evaluate_0.21       pracma_2.4.2        data.table_1.14.8  
+## [40] numDeriv_2016.8-1.1 listenv_0.9.0       codetools_0.2-19   
+## [43] parallelly_1.36.0   rmarkdown_2.23      tools_4.4.0        
+## [46] htmltools_0.5.5</code></pre>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

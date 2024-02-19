@@ -4,7 +4,9 @@
 \name{TYKS_reduced}
 \alias{TYKS_reduced}
 \title{ePCR model fitted to the Turku University Hospital cohorts (features derived from text mining only)}
-\format{An object of class \code{PEP} of length 1.}
+\format{
+An object of class \code{PEP} of length 1.
+}
 \usage{
 data(ePCRmodels)
 }

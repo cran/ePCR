@@ -52,7 +52,7 @@ normriskrank <- function(x){
 #' @author Teemu Daniel Laajala \email{teelaa@@utu.fi}
 #' @export
 conforminput <- function(object, newx){
-	if(class(object)=="PSP"){
+	if(inherits(object,"PSP")){
 		#feats <- rownames(glmnet::predict.coxnet(object@fit, s=object@optimum["Lambda"], type="coefficients"))
 		feats <- rownames(predict(object@fit, s=object@optimum["Lambda"], type="coefficients"))
 		expandx <- object@x.expand(as.matrix(newx))
@@ -65,7 +65,7 @@ conforminput <- function(object, newx){
 		}))
 		colnames(comformx) <- feats
 		as.matrix(comformx[,feats])
-	}else if(class(object)=="PEP"){
+	}else if(inherits(object,"PEP")){
 		#feats <- rownames(glmnet::predict.coxnet(object@PSPs[[1]]@fit, s=object@PSPs[[1]]@optimum["Lambda"], type="coefficients"))
 		feats <- rownames(predict(object@PSPs[[1]]@fit, s=object@PSPs[[1]]@optimum["Lambda"], type="coefficients"))
 		expandx <- object@PSPs[[1]]@x.expand(as.matrix(newx))

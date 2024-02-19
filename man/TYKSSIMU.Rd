@@ -8,7 +8,23 @@
 \alias{yMEDISIMU}
 \alias{yTEXTSIMU}
 \title{TYKSSIMU - simulated data matrices and survival responses from Turku University Hospital}
-\format{xTEXTSIMU:}
+\format{
+xTEXTSIMU:
+
+xMEDISIMU:
+
+yTEXTSIMU:
+
+yMEDISIMU:
+
+An object of class \code{data.frame} with 150 rows and 101 columns.
+
+An object of class \code{data.frame} with 500 rows and 101 columns.
+
+An object of class \code{data.frame} with 150 rows and 3 columns.
+
+An object of class \code{data.frame} with 500 rows and 3 columns.
+}
 \usage{
 data(TYKSSIMU)
 

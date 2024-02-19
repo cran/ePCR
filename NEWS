@@ -1,3 +1,25 @@
+ePCR v0.10.0/1 (Release date: 2024-01-29)
+==============
+
+Changes:
+
+* Package size compression
+* Old Rnw changed to run as Rmd vignette instead
+* methods-package imported instead of suggested for exportClasses and exportMethods
+
+ePCR v0.9.10 (Release date: 2022-09-19)
+==============
+
+Changes:
+
+* Dependencies updated to Matrix package as requested by its authors
+
+ePCR v0.9.9-12 (Release date: 2020-01-28)
+==============
+Changes:
+
+* Calling predict-function directly as exported from the glmnet-package
+
 ePCR v0.9.9-10/11 (Release date: 2019-11-23)
 ==============
 
@@ -6,7 +28,6 @@ Changes:
 * Updated compatibility with the latest version of glmnet and its changed namespace.
 * Updated newest variable visibility requirements in examples
 * Fixed a bug that occurred in Debian distro (meanrank-function class checking)
-
 
 ePCR v0.9.9-9 (Release date: 2019-04-11)
 ==============
